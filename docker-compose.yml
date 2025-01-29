@@ -1,0 +1,6 @@
+﻿services:
+  app:
+    image: simple-url-shortener
+    build:
+      context: .
+      dockerfile: SimpleUrlShortener.Presentation/Dockerfile
