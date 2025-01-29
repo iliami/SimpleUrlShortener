@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using SimpleUrlShortener.Domain.CreateUrlUseCase;
 using SimpleUrlShortener.Presentation.Models;
 
 namespace SimpleUrlShortener.Presentation.Controllers;
@@ -21,10 +23,22 @@ public class HomeController : Controller
     }
 
     [HttpGet("/{url:required}")]
-    public IActionResult ShortenUrl(string url)
+    public async Task<IActionResult> ShortenUrl(string url, [FromServices] IMediator mediator, CancellationToken ct)
     {
         _logger.LogInformation("{Url}", url);
-        return View("Index");
+        var request = new CreateUrlRequest(url);
+        var result = await mediator.Send(request, ct);
+        return result.Match(
+            err =>
+            {
+                _logger.LogError("{Error}", err);
+                return View("Error");
+            },
+            val =>
+            {
+                _logger.LogInformation("{Value}", val);
+                return View("Index");
+            });
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

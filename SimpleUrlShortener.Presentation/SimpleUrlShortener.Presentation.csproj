@@ -13,4 +13,14 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\SimpleUrlShortener.Domain\SimpleUrlShortener.Domain.csproj" />
+      <ProjectReference Include="..\SimpleUrlShortener.Infrastructure\SimpleUrlShortener.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.5" />
+    </ItemGroup>
+
 </Project>
