@@ -23,7 +23,7 @@ public class UrlNormalizer : IUrlNormalizer
 
         // Удаляем 'www.' из хоста
         var host = uri.Host;
-        if (host.StartsWith("www."))
+        if (host.StartsWith("www.") && host.Count(s => s == '.') > 1)
         {
             host = host[4..];
         }

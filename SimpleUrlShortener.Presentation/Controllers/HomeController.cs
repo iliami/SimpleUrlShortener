@@ -16,23 +16,22 @@ public class HomeController : Controller
     }
 
     [HttpGet("/")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index(
+        [FromQuery, AsParameters] CreateUrlRequest request,
+        [FromServices] IMediator mediator, 
+        CancellationToken ct)
     {
-        _logger.LogInformation("Index");
-        return View();
-    }
-
-    [HttpPost("/")]
-    public async Task<IActionResult> ShortenUrl([FromQuery] string url, [FromServices] IMediator mediator, CancellationToken ct)
-    {
-        _logger.LogInformation("{Url}", url);
-        var request = new CreateUrlRequest(url);
+        _logger.LogInformation("{Request}", request);
+        if (request.Url is null or "")
+        {
+            return View("Index");
+        }
         var result = await mediator.Send(request, ct);
         return result.Match(
             err =>
             {
                 _logger.LogError("{Error}", err);
-                return View("Error");
+                return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             },
             val =>
             {
