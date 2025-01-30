@@ -39,6 +39,7 @@ builder.Services
     .AddScoped<IReadonlyCache, CacheStorage>()
     .AddScoped<ICacheStorage, CacheStorage>()
     .AddScoped<IEventBus, EventBus>()
+    .AddScoped<IUrlNormalizer, UrlNormalizer>()
     .AddScoped<IUrlEncoder, UrlEncoder>()
     .AddControllersWithViews();
 

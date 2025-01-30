@@ -22,8 +22,8 @@ public class HomeController : Controller
         return View();
     }
 
-    [HttpGet("/{url:required}")]
-    public async Task<IActionResult> ShortenUrl(string url, [FromServices] IMediator mediator, CancellationToken ct)
+    [HttpPost("/")]
+    public async Task<IActionResult> ShortenUrl([FromQuery] string url, [FromServices] IMediator mediator, CancellationToken ct)
     {
         _logger.LogInformation("{Url}", url);
         var request = new CreateUrlRequest(url);

@@ -2,5 +2,5 @@
 
 public interface IUrlEncoder
 {
-    Task<string> Encode(string url);
+    Task<string> Encode(string url, CancellationToken ct = default);
 }

@@ -1,25 +1,19 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
 
 namespace SimpleUrlShortener.Domain.CreateUrlUseCase;
 
 public class CreateUrlUseCase(
     ICreateUrlStorage storage, 
-    IValidator<CreateUrlRequest> validator,
+    IUrlNormalizer urlNormalizer,
     IUrlEncoder urlEncoder,
     IEventBus eventBus) 
     : IRequestHandler<CreateUrlRequest, Result<CreateUrlResponse>>
 {
     public async Task<Result<CreateUrlResponse>> Handle(CreateUrlRequest request, CancellationToken ct = default)
     {
-        var validationResult = await validator.ValidateAsync(request, ct);
-        if (!validationResult.IsValid)
-        {
-            return validationResult.AsResult<CreateUrlResponse>();
-        }
-
-        var shortUrl = await urlEncoder.Encode(request.Url);
-        var urlDto = new UrlDto(request.Url, shortUrl);
+        var normalizedUrl = await urlNormalizer.NormalizeUrl(request.Url, ct);
+        var urlCode = await urlEncoder.Encode(normalizedUrl, ct);
+        var urlDto = new UrlDto(normalizedUrl, urlCode);
 
         var url = await storage.CreateUrl(urlDto, ct);
 
