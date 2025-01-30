@@ -2,8 +2,8 @@ using FluentValidation;
 using MassTransit;
 using Microsoft.Extensions.Options;
 using SimpleUrlShortener.Domain;
+using SimpleUrlShortener.Domain.Behaviors;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
-using SimpleUrlShortener.Domain.Pipelines;
 using SimpleUrlShortener.Infrastructure;
 using SimpleUrlShortener.Presentation.Options;
 
@@ -16,7 +16,7 @@ builder.Services
     .AddMediatR(configurator =>
     {
         configurator.RegisterServicesFromAssemblyContaining<SimpleUrlShortener.Domain.Url>();
-        configurator.AddOpenBehavior(typeof(ValidationBehavior<,>));
+        configurator.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
     })
     .AddMassTransit(busConfigurator =>
     {
