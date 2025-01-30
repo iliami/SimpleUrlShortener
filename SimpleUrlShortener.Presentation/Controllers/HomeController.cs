@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
@@ -21,7 +22,6 @@ public class HomeController : Controller
         [FromServices] IMediator mediator, 
         CancellationToken ct)
     {
-        _logger.LogInformation("{Request}", request);
         if (request.Url is null or "")
         {
             return View("Index");
@@ -30,14 +30,10 @@ public class HomeController : Controller
         return result.Match(
             err =>
             {
-                _logger.LogError("{Error}", err);
+                _logger.LogError("Error {Error} occured at {EndpointName}", nameof(Index), err);
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             },
-            val =>
-            {
-                _logger.LogInformation("{Value}", val);
-                return View("Index");
-            });
+            _ => View("Index"));
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

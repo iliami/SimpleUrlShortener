@@ -7,34 +7,29 @@ public interface IUrlNormalizer
 
 public class UrlNormalizer : IUrlNormalizer
 {
-    private static readonly string[] Protocols = ["http://", "https://"]; 
+    private static readonly string[] Protocols = ["http://", "https://", "ftp://", "ftps://", "file://"]; 
     public Task<string> NormalizeUrl(string url, CancellationToken ct)
     {
-        // Добавляем протокол, если его нет
         var isAnyProtocol = Protocols.Aggregate(false,
-            (current, protocol) => current | url.StartsWith(protocol));
+            (current, protocol) => current | url.StartsWith(protocol, StringComparison.InvariantCultureIgnoreCase));
         if (!isAnyProtocol)
         {
             url = "https://" + url;
         }
 
-        // Создаем объект Uri
         Uri uri = new(url);
 
-        // Удаляем 'www.' из хоста
         var host = uri.Host;
-        if (host.StartsWith("www.") && host.Count(s => s == '.') > 1)
+        if (host.StartsWith("www.", StringComparison.InvariantCultureIgnoreCase) && host.Count(s => s == '.') > 1)
         {
             host = host[4..];
         }
 
-        // Убираем слеш в конце пути, если он есть
         var path = uri.AbsolutePath.TrimEnd('/');
 
-        // Собираем URL обратно, сохраняя исходный протокол
         var uriBuilder = new UriBuilder
         {
-            Scheme = uri.Scheme,  // Сохраняем исходный протокол
+            Scheme = uri.Scheme,
             Host = host,
             Path = uri.AbsolutePath,
             Query = uri.Query,

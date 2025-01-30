@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SimpleUrlShortener.Domain.Shared;
 
 namespace SimpleUrlShortener.Domain.CreateUrlUseCase;
 
@@ -17,7 +18,7 @@ public class CreateUrlUseCase(
 
         var url = await storage.CreateUrl(urlDto, ct);
 
-        await eventBus.Publish(url.ToEventModel(), ct);
+        eventBus.Publish(url.ToEventModel(), ct).FireAndForget();
 
         var response = new CreateUrlResponse(url.Original, url.Code);
         return response;
