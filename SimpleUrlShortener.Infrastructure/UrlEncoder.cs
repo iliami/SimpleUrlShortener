@@ -8,6 +8,12 @@ public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger
 {
     public async Task<string> Encode(string url, CancellationToken ct = default)
     {
+        var cachedCode = await readonlyCache.Get<string?>(url, ct);
+        if (cachedCode is not null)
+        {
+            return cachedCode;
+        }
+
         var codeChars = new char[UrlCodeSettings.CodeLength];
         var maxValue = UrlCodeSettings.Alphabet.Length;
         

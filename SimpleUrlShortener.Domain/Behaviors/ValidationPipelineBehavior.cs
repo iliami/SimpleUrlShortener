@@ -2,6 +2,7 @@
 using System.Text;
 using FluentValidation;
 using MediatR;
+using SimpleUrlShortener.Domain.Shared;
 
 namespace SimpleUrlShortener.Domain.Behaviors;
 

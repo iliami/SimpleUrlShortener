@@ -1,7 +1,4 @@
-﻿using System.Text;
-using FluentValidation.Results;
-
-namespace SimpleUrlShortener.Domain;
+﻿namespace SimpleUrlShortener.Domain.Shared;
 
 public class Result
 { 

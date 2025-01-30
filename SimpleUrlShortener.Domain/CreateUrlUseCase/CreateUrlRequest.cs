@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SimpleUrlShortener.Domain.Shared;
 
 namespace SimpleUrlShortener.Domain.CreateUrlUseCase;
 

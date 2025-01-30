@@ -21,6 +21,7 @@ public class CreateUrlStorage(
         if (cachedUrl != url.Original)
         {
             await cacheStorage.Set(url.Short, url.Original, TimeSpan.FromDays(7), ct);
+            await cacheStorage.Set(url.Original, url.Short, TimeSpan.FromDays(7), ct);
         }
 
         return url.ToDomainModel();
