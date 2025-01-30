@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using SimpleUrlShortener.Domain;
 using SimpleUrlShortener.Domain.Behaviors;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
+using SimpleUrlShortener.Domain.GetUrlUseCase;
 using SimpleUrlShortener.Infrastructure;
 using SimpleUrlShortener.Presentation.Options;
 
@@ -33,6 +34,7 @@ builder.Services
             });
         });
     })
+    .AddScoped<IGetUrlStorage, GetUrlStorage>()
     .AddScoped<ICreateUrlStorage, CreateUrlStorage>()
     .AddScoped<IGuidFactory, GuidFactory>()
     .AddScoped<IMomentProvider, MomentProvider>()
