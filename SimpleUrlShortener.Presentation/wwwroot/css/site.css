@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&family=Open+Sans:wght@300..800&display=swap');
 
+:root {
+    --w-ratio: calc(100vw / 1920);
+    --h-ratio: calc(100vh / 1080);
+    --font-diff: calc(14px * var(--w-ratio));
+}
+
+
 body {
     background-color: #BFCCCD;
 
@@ -15,13 +22,17 @@ body {
     height: 100vh;
 }
 
+
+
+
 header {
     background-color: #224347;
-    height: 50px;
+    height: clamp(44px, calc(50 * var(--h-ratio)), 80px);
     width: 100%;
     box-shadow: rgba(34, 67, 71, 0.6) 0 0 10px 7px;
     display: flex;
     align-items: center;
+    margin-bottom: 20px;
 }
 
 .header-link {
@@ -33,34 +44,39 @@ header {
 }
 
 .header-brand {
-    font-size: 24px;
+    font-size: clamp(24px, calc(24px + var(--font-diff)), 60px);
 }
+
+
+
+
 
 main {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
+    margin: 0 30px;
 }
 
 main > div {
-    width: 420px;
+    width: calc(420px * var(--w-ratio));
 }
 
 .main-text {
     color: #717171;
-    font-size: 17px;
+    font-size: calc(17px + var(--font-diff));
 }
 
 .brand {
     color: #424242;
-    font-size: 17px;
+    font-size: calc(17px + var(--font-diff));
     font-weight: 400;
 }
 
 .additional-text {
     color: #717171;
-    font-size: 13px;
+    font-size: calc(13px + var(--font-diff));
 }
 
 .bolder {
@@ -68,9 +84,12 @@ main > div {
     font-weight: 600;
 }
 
+
+
 .input-form {
     display: flex;
     justify-content: space-between;
+    height: clamp(40px, calc(40 * var(--h-ratio)), 50px);
 }
 
 .input {
@@ -78,15 +97,22 @@ main > div {
     border-radius: 15px;
     font-family: "Open Sans", serif;
     font-weight: 300;
-    font-size: 15px;
-    height: 40px;
+    font-size: calc(15px + var(--font-diff));
+    height: inherit;
 }
 
 .input-text {
     color: inherit;
     background-color: #e0e0e0;
-    width: 340px;
+    padding: 2px 2px 2px 10px;
+    width: clamp(60%, calc(100% - 70 * var(--w-ratio)), 70%);
     box-shadow: rgba(172, 172, 172, 0.5) 0 0 5px 2px;
+    transition: box-shadow 0.2s ease-in-out 0s;
+}
+
+.input-text:focus {
+    outline: none !important;
+    box-shadow: rgba(172, 172, 172, 0.5) 0 0 10px 7px;
 }
 
 .input-text:disabled {
@@ -96,18 +122,35 @@ main > div {
 .button {
     background-color: #c9c9c9;
     color: #555555;
-    width: 70px;
+    width: clamp(25%, calc(70 * var(--w-ratio)), 35%);
     box-shadow: inset rgba(172, 172, 172, 0.6) 0 0 3px 0;
+    transition: box-shadow 0.35s ease-in-out 0s;
 }
+
+.button:hover {
+    box-shadow:
+                  rgba(172, 172, 172, 0.5) 0 0 5px 2px,
+            inset rgba(172, 172, 172, 0.6) 0 0 3px 0;
+    transition: background-color 0.2s ease-in-out 0s;
+}
+
+.button:active {
+    background-color: #c4c4c4;
+}
+
+
+
+
 
 footer {
     background-color: #224347;
-    height: 50px;
+    height: clamp(34px, calc(50 * var(--h-ratio)), 60px);
     width: 100%;
+    margin-top: 20px;
     box-shadow: rgba(34, 67, 71, 0.6) 0 0 10px 7px;
     font-family: "Montserrat", serif;
     font-weight: 400;
-    font-size: 14px;
+    font-size: clamp(14px, calc(14px + var(--font-diff)), 50px);
     color: #E0E0E0;
     display: flex;
     justify-content: center;
