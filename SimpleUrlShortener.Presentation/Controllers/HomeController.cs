@@ -17,24 +17,41 @@ public class HomeController : Controller
         _logger = logger;
     }
 
+    public IActionResult Index()
+    {
+        return View();
+    }
+
     [HttpGet("/")]
-    public async Task<IActionResult> Index(
-        [FromQuery, AsParameters] CreateUrlRequest request,
+    public async Task<IActionResult> CreateCode(
+        [FromQuery] string u,
         [FromServices] IMediator mediator, 
         CancellationToken ct)
     {
-        if (request.Url is null or "")
+        if (u is null or "")
         {
             return View("Index");
         }
+
+        var request = new CreateUrlRequest(u);
         var result = await mediator.Send(request, ct);
+
         return result.Match(
             error =>
             {
-                _logger.LogError("Error {Error} occurred at {EndpointName}", nameof(Index), error);
+                _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             },
-            _ => View("Index"));
+            value =>
+            {
+                var httpContextRequest = HttpContext.Request;
+                var host = httpContextRequest.Host.Value;
+                var scheme = httpContextRequest.Scheme;
+                var shortUrl = $"{scheme}://{host}/{value.Code}";
+                
+                return View("Result",
+                    new UrlViewModel { OriginalUrl = value.OriginalUrl, ShortenedUrl = shortUrl });
+            });
     }
 
     [HttpGet("/{urlCode:required}")]
@@ -45,16 +62,16 @@ public class HomeController : Controller
     {
         var request = new GetUrlRequest(urlCode);
         var result = await mediator.Send(request, ct);
-        return result.Match(
+        return result.Match<IActionResult>(
             error =>
             {
-                _logger.LogError("Error {Error} occurred at {EndpointName}", nameof(Index), error);
+                _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(Index));
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             },
             value =>
             {
                 HttpContext.Response.Redirect(value.OriginalUrl);
-                return (IActionResult)Redirect(value.OriginalUrl)!;
+                return Redirect(value.OriginalUrl)!;
             });
     }
 

@@ -5,4 +5,9 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <form method="get" asp-action="CreateCode">
+        <label for="u">URL:</label><br />
+        <input type="text" name="u" id="u" /><br /><br />
+        <input type="submit" value="Get shortened" />
+    </form>
 </div>
