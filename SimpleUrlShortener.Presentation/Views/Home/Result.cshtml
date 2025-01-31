@@ -4,11 +4,14 @@
     ViewData["Title"] = "Result Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-    <h2>@Model.ShortenedUrl</h2>
-    <form action="//@Model.OriginalUrl">
-        <input type="submit" value="Go" />
-    </form>
+<div>
+    <p class="main-text">Create shorter URLs with <span class="brand">Simple Url Shortener</span></p>
+    <p class="additional-text">
+        Create concise, shareable URLs that <span class="bolder">boost</span><br/>
+        your online presence <span class="bolder">and simplify</span> your digital sharing experience.
+    </p>
+    <div class="input-form">
+        <input class="input input-text" type="text" value="@Model.ShortenedUrl" disabled="disabled"/>
+        <button class="input button" type="button">Copy</button>
+    </div>
 </div>

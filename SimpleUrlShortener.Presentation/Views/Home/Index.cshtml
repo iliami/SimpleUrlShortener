@@ -2,12 +2,14 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-    <form method="get" asp-action="CreateCode">
-        <label for="u">URL:</label><br />
-        <input type="text" name="u" id="u" /><br /><br />
-        <input type="submit" value="Get shortened" />
+<div>
+    <p class="main-text">Create shorter URLs with <span class="brand">Simple Url Shortener</span></p>
+    <p class="additional-text">
+        Create concise, shareable URLs that <span class="bolder">boost</span><br/>
+        your online presence <span class="bolder">and simplify</span> your digital sharing experience.
+    </p>
+    <form class="input-form" method="get" asp-action="CreateCode">
+        <input class="input input-text" type="text" name="u" id="u" placeholder="Enter your long URL" />
+        <input class="input button" type="submit" value="Shorten" />
     </form>
 </div>
