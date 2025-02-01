@@ -6,9 +6,9 @@ namespace SimpleUrlShortener.Infrastructure;
 
 public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger) : IUrlEncoder
 {
-    public async Task<string> Encode(string url, CancellationToken ct = default)
+    public async Task<string> Encode(string normalizedUrl, CancellationToken ct = default)
     {
-        var cachedCode = await readonlyCache.Get<string?>(url, ct);
+        var cachedCode = await readonlyCache.Get<string?>(normalizedUrl, ct);
         if (cachedCode is not null)
         {
             return cachedCode;
@@ -31,7 +31,7 @@ public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger
             code = new string(codeChars);
 
             var cachedUrl = await readonlyCache.Get<string?>(code, ct);
-            if (cachedUrl is null || cachedUrl == url)
+            if (cachedUrl is null || cachedUrl == normalizedUrl)
             {
                 break;
             }
@@ -40,11 +40,11 @@ public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger
 
         if (attempts == 0)
         {
-            logger.LogError("Failed to encode url: {Url}", url);
-            throw new Exception($"Failed to encode url: {url}");
+            logger.LogError("Failed to encode url: {Url}", normalizedUrl);
+            throw new Exception($"Failed to encode url: {normalizedUrl}");
         }
 
-        logger.LogInformation("Result of url {Url} encoding: {UrlCode}", url, code);
+        logger.LogInformation("Result of url {Url} encoding: {UrlCode}", normalizedUrl, code);
 
         return code;
     }

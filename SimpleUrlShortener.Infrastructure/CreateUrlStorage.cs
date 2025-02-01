@@ -14,14 +14,15 @@ public class CreateUrlStorage(
         {
             Id = guidFactory.Create(),
             Original = urlDto.OriginalUrl,
+            Normalized = urlDto.NormalizedUrl,
             Short = urlDto.UrlCode,
             CreatedAt = momentProvider.Current
         };
         var cachedUrl = await cacheStorage.Get<string>(url.Short, ct);
-        if (cachedUrl != url.Original)
+        if (cachedUrl != url.Normalized)
         {
-            await cacheStorage.Set(url.Short, url.Original, TimeSpan.FromDays(7), ct);
-            await cacheStorage.Set(url.Original, url.Short, TimeSpan.FromDays(7), ct);
+            await cacheStorage.Set(url.Short, url.Normalized, TimeSpan.FromDays(7), ct);
+            await cacheStorage.Set(url.Normalized, url.Short, TimeSpan.FromDays(7), ct);
         }
 
         return url.ToDomainModel();
