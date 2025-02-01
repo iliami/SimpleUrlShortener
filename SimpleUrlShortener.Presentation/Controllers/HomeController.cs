@@ -1,9 +1,8 @@
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
 using SimpleUrlShortener.Domain.GetUrlUseCase;
+using SimpleUrlShortener.Domain.Shared;
 using SimpleUrlShortener.Presentation.Models;
 
 namespace SimpleUrlShortener.Presentation.Controllers;
@@ -17,10 +16,7 @@ public class HomeController : Controller
         _logger = logger;
     }
 
-    public IActionResult Index()
-    {
-        return View();
-    }
+    public IActionResult Index() => View();
 
     [HttpGet("/")]
     public async Task<IActionResult> CreateCode(
@@ -39,8 +35,15 @@ public class HomeController : Controller
         return result.Match(
             error =>
             {
-                _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
-                return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+                if (error.Code is not Error.CommonCodes.Validation)
+                {
+                    _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
+                }
+                return error.Code switch
+                {
+                    Error.CommonCodes.Validation => View("Error400"),
+                    _ => View("Error500")
+                };
             },
             value =>
             {
@@ -62,11 +65,19 @@ public class HomeController : Controller
     {
         var request = new GetUrlRequest(urlCode);
         var result = await mediator.Send(request, ct);
+
         return result.Match<IActionResult>(
             error =>
             {
-                _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(Index));
-                return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+                if (error.Code is not Error.CommonCodes.Validation)
+                {
+                    _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
+                }
+                return error.Code switch
+                {
+                    Error.CommonCodes.Validation => View("Error400"),
+                    _ => View("Error500")
+                };
             },
             value =>
             {
@@ -76,8 +87,6 @@ public class HomeController : Controller
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
+    [Route("/error")]
+    public IActionResult Error404() => View();
 }

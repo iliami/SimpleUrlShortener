@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&family=Open+Sans:wght@300..800&display=swap');
 
 :root {
-    --w-ratio: calc(100vw / 1920);
-    --h-ratio: calc(100vh / 1080);
-    --font-diff: calc(14px * var(--w-ratio));
+    --w-ratio: calc(100vw / 1280);
+    --h-ratio: calc(100vh / 720);
+    --font-diff: calc(8 * var(--w-ratio));
 }
 
 
@@ -136,6 +136,60 @@ main > div {
 
 .button:active {
     background-color: #c4c4c4;
+}
+
+
+
+
+
+.error-container {
+    font-family: inherit;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    /*width: 50%;*/
+    height: 100%;
+}
+
+.error-container #code {
+    color: #202020;
+    /*width: clamp(40%, calc(100 * var(--w-ratio)), 50%);*/
+    font-size: calc(80px + var(--font-diff));
+    /*font-size: 80px;*/
+    font-weight: 600;
+    margin: 0 20px 0 0;
+}
+
+.error-container #description h2 {
+    color: #202020;
+    font-family: inherit;
+    font-size: calc(36px + var(--font-diff));
+    /*font-size: 36px;*/
+    font-weight: 400;
+}
+
+.error-container #description h3 {
+    color: #717171;
+    font-family: inherit;
+    font-size: calc(24px + var(--font-diff));
+    /*font-size: 24px;*/
+    font-weight: 300;
+}
+
+.error-container #description h3 a {
+    color: #424242;
+    font-weight: 600;
+    text-decoration: underline solid;
+    transition: color 0.2s ease-in-out 0s;
+}
+
+.error-container #description h3 a:hover {
+    color: #252525;
+    transition: color 0.1s ease-in-out 0s;
+}
+
+.error-container #description h3 a:active {
+    color: #202020;
 }
 
 
