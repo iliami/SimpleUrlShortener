@@ -53,6 +53,7 @@ header {
 
 main {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
@@ -117,6 +118,23 @@ main > div {
 
 .input-text:disabled {
     background-color: #D1D1D1;
+}
+
+@keyframes fadeOut {
+    from {
+        border: 2px solid rgba(153, 43, 43, 0.8);
+        background-color: rgba(255, 108, 108, 0.6); 
+    }
+    to {
+        border: 0;
+        background-color: #e0e0e0;
+    }
+}
+
+.input-text.invalid:not(:disabled) {
+    /*border: 2px solid #a60000;*/
+    /*background-color: rgba(255, 0, 0, 0.6);*/
+    animation: fadeOut 2s forwards ease-out;
 }
 
 .button {

@@ -1,7 +1,50 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿const originalAndShortenedURLsKey = "OriginalAndShortened_URLs";
+const lastOriginalURLKey = "LastOriginal_URL";
 
-// Write your JavaScript code.
-const inputText = document.querySelector(".input-text:disabled");
-const copyButton = document.querySelector("button.button");
-copyButton.addEventListener('click', () => navigator.clipboard.writeText(inputText.value));
+class UrlPair {
+    constructor(id, originalUrl, shortenedUrl) {
+        this.id = id;
+        this.originalUrl = originalUrl;
+        this.shortenedUrl = shortenedUrl;
+    }
+}
+
+
+const inputForm = document.querySelector(".input-form");
+window.addEventListener("load", AddStoredUrls)
+
+const table = document.createElement('table');
+
+function AddStoredUrls() {
+    const urlPairs = JSON.parse(localStorage.getItem(originalAndShortenedURLsKey));
+    if (!urlPairs || urlPairs.length === 0) {
+        localStorage.setItem(originalAndShortenedURLsKey, JSON.stringify([]));
+        return;
+    }
+
+    const tableRows = [];
+    for (const url of urlPairs) {
+        if (!url) continue;
+        const tableRow = `<tr id="${url.id}"><td>&#215;</td><td>${url.originalUrl}</td><td>${url.shortenedUrl}</td></tr>`
+        tableRows.push(tableRow);
+    }
+
+    const tableDiv = document.createElement("div");
+    inputForm.parentNode.parentNode.appendChild(tableDiv);
+    tableDiv.style.marginTop = "30px";
+    tableDiv.appendChild(table);
+    table.innerHTML = "<thead><tr><th></th><th>Original URL</th><th>Shortened URL</th></tr></thead>";
+    table.firstElementChild.insertAdjacentHTML('afterend', "<tbody>" + tableRows.reverse().join(" ") + "</tbody>");
+    for (const tr of table.children.item(1).children) {
+        tr.firstChild.addEventListener("click", RemoveStoredUrlPair);
+    }
+}
+
+function RemoveStoredUrlPair(event) {
+    const tableRowId = event.target.parentNode.id;
+    const urlPairs = JSON.parse(localStorage.getItem(originalAndShortenedURLsKey))
+        .filter((item) => item.id != tableRowId);
+    localStorage.setItem(originalAndShortenedURLsKey, JSON.stringify(urlPairs));
+
+    table.children.item(1).removeChild(event.target.parentNode);
+}

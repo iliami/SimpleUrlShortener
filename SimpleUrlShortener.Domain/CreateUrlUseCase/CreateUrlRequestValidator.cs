@@ -10,6 +10,6 @@ public class CreateUrlRequestValidator : AbstractValidator<CreateUrlRequest>
             .Cascade(CascadeMode.Stop)
             .NotNull()
             .NotEmpty()
-            .Matches(@"^(https?:\/\/)?(?:www\.)?([a-zA-Z0-9\-]{2,}\.)+[a-zA-Z0-9]{2,}(?:[-a-zA-Z0-9()@:%_\+.~#?&\[\]\/=]*)$");
+            .Matches(@"^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9]+([-a-zA-Z0-9()@:%_\+.~#?&\[\]\/=]*)$");
     }
 }
