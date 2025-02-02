@@ -61,7 +61,7 @@ main {
 }
 
 main > div {
-    width: calc(420px * var(--w-ratio));
+    width: clamp(30%, calc(500 * var(--w-ratio)), 100%);
 }
 
 .main-text {
@@ -154,6 +154,64 @@ main > div {
 
 .button:active {
     background-color: #c4c4c4;
+}
+
+
+
+
+
+div:has(table) {
+    width: clamp(30%, calc(500 * var(--w-ratio)), 100%);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table td, table th {
+    font-size: calc(12px + var(--font-diff));
+    border: 1px solid #424242;
+}
+
+table th {
+    cursor: default;
+    color: #424242;
+    font-weight: 400;
+}
+
+table td {
+    color: #717171;
+    font-weight: 300;
+    padding: 5px 5px 5px 15px;
+}
+
+table tr:first-child th {
+    border-top: 0;
+}
+
+table tr:last-child td {
+    border-bottom: 0;
+}
+
+table tr td:first-child,
+table tr th:first-child {
+    border-left: 0;
+}
+
+table tr td:last-child,
+table tr th:last-child {
+    border-right: 0;
+}
+
+table tr td:first-child {
+    cursor: default;
+    font-size: calc(15px + var(--font-diff));
+    transition: transform 0.2s ease-in-out 0s;
+}
+
+table tr td:first-child:hover {
+    transform: scale(1.4)
 }
 
 
