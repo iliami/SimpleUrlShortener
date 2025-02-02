@@ -4,7 +4,7 @@ using SimpleUrlShortener.Domain.CreateUrlUseCase;
 namespace SimpleUrlShortener.Infrastructure;
 
 public class CreateUrlStorage(
-    ICacheStorage cacheStorage, 
+    IStringCacheStorage stringCacheStorage, 
     IGuidFactory guidFactory, 
     IMomentProvider momentProvider) : ICreateUrlStorage
 {
@@ -14,16 +14,10 @@ public class CreateUrlStorage(
         {
             Id = guidFactory.Create(),
             Original = urlDto.OriginalUrl,
-            Normalized = urlDto.NormalizedUrl,
-            Short = urlDto.UrlCode,
+            Code = urlDto.UrlCode,
             CreatedAt = momentProvider.Current
         };
-        var cachedUrl = await cacheStorage.Get<string>(url.Short, ct);
-        if (cachedUrl != url.Normalized)
-        {
-            await cacheStorage.Set(url.Short, url.Normalized, TimeSpan.FromDays(7), ct);
-            await cacheStorage.Set(url.Normalized, url.Short, TimeSpan.FromDays(7), ct);
-        }
+        await stringCacheStorage.Set(url.Code, url.Original, TimeSpan.FromHours(12), ct);
 
         return url.ToDomainModel();
     }

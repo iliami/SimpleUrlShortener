@@ -1,17 +1,27 @@
 ﻿using SimpleUrlShortener.Domain;
 using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace SimpleUrlShortener.Infrastructure;
 
-public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger) : IUrlEncoder
+public class UrlEncoder(IStringCacheStorage storage, NoTrackingDbContext dbContext, ILogger<UrlEncoder> logger) : IUrlEncoder
 {
-    public async Task<string> Encode(string normalizedUrl, CancellationToken ct = default)
+    public async Task<string> Encode(string originalUrl, CancellationToken ct = default)
     {
-        var cachedCode = await readonlyCache.Get<string?>(normalizedUrl, ct);
+        var cachedCode =
+            await storage.Get(originalUrl, ct);
         if (cachedCode is not null)
         {
             return cachedCode;
+        }
+
+        var storedUrl = await dbContext.Urls
+            .FirstOrDefaultAsync(u => u.Original == originalUrl, ct);
+        if (storedUrl is not null)
+        {
+            await storage.Set(originalUrl, storedUrl.Code, TimeSpan.FromHours(12), ct);
+            return storedUrl.Code;
         }
 
         var codeChars = new char[UrlCodeSettings.CodeLength];
@@ -30,8 +40,8 @@ public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger
 
             code = new string(codeChars);
 
-            var cachedUrl = await readonlyCache.Get<string?>(code, ct);
-            if (cachedUrl is null || cachedUrl == normalizedUrl)
+            var cachedUrl = await storage.Get(code, ct);
+            if (cachedUrl is null)
             {
                 break;
             }
@@ -40,11 +50,11 @@ public class UrlEncoder(IReadonlyCache readonlyCache, ILogger<UrlEncoder> logger
 
         if (attempts == 0)
         {
-            logger.LogError("Failed to encode url: {Url}", normalizedUrl);
-            throw new Exception($"Failed to encode url: {normalizedUrl}");
+            logger.LogError("Failed to encode url: {Url}", originalUrl);
+            throw new Exception($"Failed to encode url: {originalUrl}");
         }
 
-        logger.LogInformation("Result of url {Url} encoding: {UrlCode}", normalizedUrl, code);
+        logger.LogInformation("Result of url {Url} encoding: {UrlCode}", originalUrl, code);
 
         return code;
     }

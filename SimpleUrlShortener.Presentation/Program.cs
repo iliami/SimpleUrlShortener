@@ -1,5 +1,6 @@
 using FluentValidation;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SimpleUrlShortener.Domain;
 using SimpleUrlShortener.Domain.Behaviors;
@@ -32,16 +33,19 @@ builder.Services
                 hostConfigurator.Username(settings.Username);
                 hostConfigurator.Password(settings.Password);
             });
+
+            configurator.ConfigureEndpoints(context);
         });
+
+        busConfigurator.AddConsumer<UrlCreatedEventConsumer>();
     })
+    .AddDbContext<NoTrackingDbContext>()
     .AddScoped<IGetUrlStorage, GetUrlStorage>()
     .AddScoped<ICreateUrlStorage, CreateUrlStorage>()
     .AddScoped<IGuidFactory, GuidFactory>()
     .AddScoped<IMomentProvider, MomentProvider>()
-    .AddScoped<IReadonlyCache, CacheStorage>()
-    .AddScoped<ICacheStorage, CacheStorage>()
+    .AddScoped<IStringCacheStorage, StringCacheStorage>()
     .AddScoped<IEventBus, EventBus>()
-    .AddScoped<IUrlNormalizer, UrlNormalizer>()
     .AddScoped<IUrlEncoder, UrlEncoder>()
     .AddControllersWithViews();
 
@@ -53,6 +57,14 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<NoTrackingDbContext>();
+    await dbContext.Database.MigrateAsync(); // TODO: dev mode migrations
+}
+
 app.UseExceptionHandler("/error");
 
 app.UseHttpsRedirection();

@@ -7,5 +7,5 @@ public interface IMomentProvider
 
 public class MomentProvider : IMomentProvider
 {
-    public DateTimeOffset Current => DateTimeOffset.Now;
+    public DateTimeOffset Current => DateTimeOffset.UtcNow;
 }

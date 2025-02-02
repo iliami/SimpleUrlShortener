@@ -1,3 +1,3 @@
 ﻿namespace SimpleUrlShortener.Domain;
 
-public record UrlDto(string OriginalUrl, string NormalizedUrl, string UrlCode);
+public record UrlDto(string OriginalUrl, string UrlCode);

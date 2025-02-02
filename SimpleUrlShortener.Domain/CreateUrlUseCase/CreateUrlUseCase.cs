@@ -5,16 +5,20 @@ namespace SimpleUrlShortener.Domain.CreateUrlUseCase;
 
 public class CreateUrlUseCase(
     ICreateUrlStorage storage, 
-    IUrlNormalizer urlNormalizer,
     IUrlEncoder urlEncoder,
     IEventBus eventBus) 
     : IRequestHandler<CreateUrlRequest, Result<CreateUrlResponse>>
 {
+    private static readonly string[] Protocols = ["http://", "https://", "ftp://", "ftps://", "file://"];
     public async Task<Result<CreateUrlResponse>> Handle(CreateUrlRequest request, CancellationToken ct = default)
     {
-        var normalizedUrl = await urlNormalizer.NormalizeUrl(request.Url, ct);
-        var urlCode = await urlEncoder.Encode(normalizedUrl, ct);
-        var urlDto = new UrlDto(request.Url, normalizedUrl, urlCode);
+        var isAnyProtocol = Protocols.Any(p => request.Url.StartsWith(p, StringComparison.InvariantCultureIgnoreCase));
+        if (!isAnyProtocol)
+        {
+            request = request with { Url = "https://" + request.Url };
+        }
+        var urlCode = await urlEncoder.Encode(request.Url, ct);
+        var urlDto = new UrlDto(request.Url, urlCode);
 
         var url = await storage.CreateUrl(urlDto, ct);
 
