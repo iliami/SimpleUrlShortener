@@ -6,6 +6,7 @@ class UrlPair {
         this.id = id;
         this.originalUrl = originalUrl;
         this.shortenedUrl = shortenedUrl;
+        this.createdAt = Date.now();
     }
 }
 
@@ -16,12 +17,15 @@ window.addEventListener("load", AddStoredUrls)
 const table = document.createElement('table');
 
 function AddStoredUrls() {
+    cleanUrlPairs();
     const urlPairs = JSON.parse(localStorage.getItem(originalAndShortenedURLsKey));
     if (!urlPairs || urlPairs.length === 0) {
         localStorage.setItem(originalAndShortenedURLsKey, JSON.stringify([]));
         return;
     }
-
+    
+    
+    
     const tableRows = [];
     for (const url of urlPairs) {
         if (!url) continue;
@@ -47,4 +51,11 @@ function RemoveStoredUrlPair(event) {
     localStorage.setItem(originalAndShortenedURLsKey, JSON.stringify(urlPairs));
 
     table.children.item(1).removeChild(event.target.parentNode);
+}
+
+const minimalDiff = (6 * 24 + 23) * 60 * 60 * 1000;
+function cleanUrlPairs() {
+    const currentTime = Date.now();
+    const urlPairs = JSON.parse(localStorage.getItem(originalAndShortenedURLsKey)).filter(item => item.createdAt - currentTime < minimalDiff);
+    localStorage.setItem(originalAndShortenedURLsKey, JSON.stringify(urlPairs));
 }
