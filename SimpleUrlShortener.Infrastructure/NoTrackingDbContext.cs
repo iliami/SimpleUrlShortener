@@ -9,6 +9,7 @@ public class NoTrackingDbContext(
     ILoggerFactory loggerFactory) : DbContext
 {
     public DbSet<Url> Urls { get; set; }
+    public DbSet<UrlCreationMoment> UrlCreationMoments { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
