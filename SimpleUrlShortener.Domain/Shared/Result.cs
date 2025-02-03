@@ -1,4 +1,7 @@
-﻿namespace SimpleUrlShortener.Domain.Shared;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
+namespace SimpleUrlShortener.Domain.Shared;
 
 public class Result
 { 
@@ -19,7 +22,10 @@ public class Result<T> : Result
 
     public T? Value { get; init; }
 
+    [MemberNotNullWhen(true, nameof(Value))]
     public bool IsSuccess => Error == null;
+
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsFailure => !IsSuccess;
 
     public static Result<T> Success(T value) => new(value);

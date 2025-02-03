@@ -7,6 +7,7 @@ using SimpleUrlShortener.Domain.Behaviors;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
 using SimpleUrlShortener.Domain.GetUrlUseCase;
 using SimpleUrlShortener.Infrastructure;
+using SimpleUrlShortener.Infrastructure.Consumers;
 using SimpleUrlShortener.Presentation.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,12 +39,12 @@ builder.Services
         });
 
         busConfigurator.AddConsumer<UrlCreatedEventConsumer>();
+        busConfigurator.AddConsumer<UrlClickedEventConsumer>();
     })
     .AddDbContext<NoTrackingDbContext>()
     .AddScoped<IGetUrlStorage, GetUrlStorage>()
     .AddScoped<ICreateUrlStorage, CreateUrlStorage>()
     .AddScoped<IGuidFactory, GuidFactory>()
-    .AddScoped<IMomentProvider, MomentProvider>()
     .AddScoped<IStringCacheStorage, StringCacheStorage>()
     .AddScoped<IEventBus, EventBus>()
     .AddScoped<IUrlEncoder, UrlEncoder>()

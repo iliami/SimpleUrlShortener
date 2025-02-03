@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SimpleUrlShortener.Infrastructure.Entities;
 
 namespace SimpleUrlShortener.Infrastructure;
 
@@ -10,6 +11,7 @@ public class NoTrackingDbContext(
 {
     public DbSet<Url> Urls { get; set; }
     public DbSet<UrlCreationMoment> UrlCreationMoments { get; set; }
+    public DbSet<UrlClick> UrlClicks { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

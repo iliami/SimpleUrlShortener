@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SimpleUrlShortener.Infrastructure;
@@ -11,9 +12,11 @@ using SimpleUrlShortener.Infrastructure;
 namespace SimpleUrlShortener.Infrastructure.Migrations
 {
     [DbContext(typeof(NoTrackingDbContext))]
-    partial class NoTrackingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250203154845_Added_UrlClick")]
+    partial class Added_UrlClick
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -1,15 +1,16 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SimpleUrlShortener.Domain;
+using SimpleUrlShortener.Domain.Events;
+using SimpleUrlShortener.Infrastructure.Entities;
+using Url = SimpleUrlShortener.Infrastructure.Entities.Url;
 
-namespace SimpleUrlShortener.Infrastructure;
+namespace SimpleUrlShortener.Infrastructure.Consumers;
 
 public class UrlCreatedEventConsumer(
     NoTrackingDbContext dbContext,
     IStringCacheStorage stringCacheStorage,
     IGuidFactory guidFactory,
-    IMomentProvider momentProvider,
     ILogger<UrlCreatedEventConsumer> logger) : IConsumer<UrlCreatedEvent>
 {
     public async Task Consume(ConsumeContext<UrlCreatedEvent> context)
@@ -29,7 +30,7 @@ public class UrlCreatedEventConsumer(
             var creationMoment = new UrlCreationMoment
             {
                 Id = guidFactory.Create(),
-                CreatedAt = momentProvider.Current,
+                CreatedAt = context.Message.CreatedAt,
                 Url = url,
             };
             dbContext.Entry(url).State = EntityState.Unchanged;
@@ -46,7 +47,7 @@ public class UrlCreatedEventConsumer(
             var creationMoment = new UrlCreationMoment
             {
                 Id = guidFactory.Create(),
-                CreatedAt = momentProvider.Current,
+                CreatedAt = context.Message.CreatedAt,
                 Url = url,
             };
             url.CreationMoments.Add(creationMoment);
