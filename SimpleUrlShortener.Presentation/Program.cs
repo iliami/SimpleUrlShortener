@@ -1,7 +1,9 @@
 using FluentValidation;
 using MassTransit;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SimpleUrlShortener.Domain;
 using SimpleUrlShortener.Domain.Behaviors;
 using SimpleUrlShortener.Domain.CreateUrlUseCase;
@@ -12,13 +14,25 @@ using SimpleUrlShortener.Presentation.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
+
 builder.Services
+    .AddHttpLogging(options =>
+    {
+        options.LoggingFields = HttpLoggingFields.Duration | HttpLoggingFields.RequestPath |
+                                HttpLoggingFields.RequestBody | HttpLoggingFields.RequestHeaders |
+                                HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
+    })
     .AddSingleton<RabbitMqOptions>(sp => sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value)
     .Configure<RabbitMqOptions>(builder.Configuration.GetSection(nameof(RabbitMqOptions)))
     .AddValidatorsFromAssemblyContaining<SimpleUrlShortener.Domain.Url>()
     .AddMediatR(configurator =>
     {
         configurator.RegisterServicesFromAssemblyContaining<SimpleUrlShortener.Domain.Url>();
+        configurator.AddOpenBehavior(typeof(LoggingPipelineBehavior<,>));
         configurator.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
     })
     .AddMassTransit(busConfigurator =>
@@ -29,11 +43,12 @@ builder.Services
         {
             var settings = context.GetRequiredService<RabbitMqOptions>();
 
-            configurator.Host(settings.Host, settings.Port, settings.VirtualHost, "SimpleUrlShortener", hostConfigurator =>
-            {
-                hostConfigurator.Username(settings.Username);
-                hostConfigurator.Password(settings.Password);
-            });
+            configurator.Host(settings.Host, settings.Port, settings.VirtualHost, "SimpleUrlShortener",
+                hostConfigurator =>
+                {
+                    hostConfigurator.Username(settings.Username);
+                    hostConfigurator.Password(settings.Password);
+                });
 
             configurator.ConfigureEndpoints(context);
         });
