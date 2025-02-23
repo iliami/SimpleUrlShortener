@@ -37,6 +37,7 @@ builder.Services
     .AddDbContext<NoTrackingDbContext>()
     .AddMemoryCache()
     .AddScoped<IGetAllStorage, GetAllStorage>()
+    .AddKeyedScoped<SimpleUrlShortener.Analytics.Domain.IConverter<IEnumerable<SimpleUrlShortener.Analytics.Domain.Url>>, SimpleUrlShortener.Analytics.Infrastructure.CsvConverter>("CsvConverter")
     
     .AddEndpoints()
     .AddSwaggerGen(options =>
