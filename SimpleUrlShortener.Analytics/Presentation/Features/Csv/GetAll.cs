@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Mime;
+using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +18,11 @@ public class GetAll : IEndpoint
                     [AsParameters] GetAllRequest request,
                     [FromServices] IMediator mediator,
                     [FromKeyedServices("CsvConverter")] IConverter<IEnumerable<Url>> converter,
-                CancellationToken ct) =>
+                    CancellationToken ct) =>
                 {
                     var response = await mediator.Send(request, ct);
 
-                    return response.Match(Results.NotFound, result =>
+                    return response.Match(Results.BadRequest, result =>
                     {
                         var csvContent = converter.Convert(result.Urls);
 
@@ -31,6 +32,9 @@ public class GetAll : IEndpoint
                     });
                 })
             .RequireAuthorization()
-            .WithTags(EndpointTags.CsvData);
+            .WithTags(EndpointTags.CsvData)
+            .Produces<IEnumerable<Url>>(StatusCodes.Status200OK, "text/csv")
+            .Produces(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 }
