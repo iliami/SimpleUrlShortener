@@ -2,7 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Serilog;
 using SimpleUrlShortener.Analytics.Domain.Behaviors;
 using SimpleUrlShortener.Analytics.Domain.UseCases.GetAll;
@@ -25,19 +25,17 @@ builder.Services
                                 HttpLoggingFields.RequestBody | HttpLoggingFields.RequestHeaders |
                                 HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
     })
-
     .AddValidatorsFromAssemblyContaining<SimpleUrlShortener.Analytics.Domain.Url>()
     .AddMediator(configurator =>
     {
         configurator.Assemblies = [typeof(SimpleUrlShortener.Analytics.Domain.Url)];
         configurator.PipelineBehaviors = [typeof(LoggingPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>)];
     })
-
     .AddDbContext<NoTrackingDbContext>()
     .AddMemoryCache()
     .AddScoped<IGetAllStorage, GetAllStorage>()
-    .AddKeyedScoped<SimpleUrlShortener.Analytics.Domain.IConverter<IEnumerable<SimpleUrlShortener.Analytics.Domain.Url>>, SimpleUrlShortener.Analytics.Infrastructure.CsvConverter>("CsvConverter")
-    
+    .AddKeyedScoped<SimpleUrlShortener.Analytics.Domain.IConverter<IEnumerable<SimpleUrlShortener.Analytics.Domain.Url>>
+        , SimpleUrlShortener.Analytics.Infrastructure.CsvConverter>("CsvConverter")
     .AddEndpoints()
     .AddSwaggerGen(options =>
     {
@@ -56,12 +54,12 @@ builder.Services
                 Scheme = ApiKeyAuthenticationDefaults.AuthenticationScheme
             });
 
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
         {
             {
-                new OpenApiSecurityScheme
+                new OpenApiSecuritySchemeReference("ApiKeyAuthentication", document)
                 {
-                    Reference = new OpenApiReference
+                    Reference = new OpenApiReferenceWithDescription
                     {
                         Type = ReferenceType.SecurityScheme,
                         Id = ApiKeyAuthenticationDefaults.AuthenticationScheme
@@ -69,7 +67,6 @@ builder.Services
                 },
                 []
             }
-            
         });
     })
     .AddScoped<IApiKeyValidator, ApiKeyValidator>()

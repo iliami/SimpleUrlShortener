@@ -5,14 +5,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="..\.dockerignore">
-            <Link>.dockerignore</Link>
-        </Content>
+        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Domain\SimpleUrlShortener.UrlShortener.Domain.csproj"/>
+        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Infrastructure\SimpleUrlShortener.UrlShortener.Infrastructure.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Domain\SimpleUrlShortener.UrlShortener.Domain.csproj"/>
-        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Infrastructure\SimpleUrlShortener.UrlShortener.Infrastructure.csproj"/>
+        <Content Update="@(Content)">
+            <Visible Condition="'%(NuGetItemType)' == 'Content'">false</Visible>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
