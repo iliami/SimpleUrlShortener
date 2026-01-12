@@ -1,6 +1,6 @@
 ﻿using System.Net.Mime;
 using System.Text;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SimpleUrlShortener.Analytics.Domain;

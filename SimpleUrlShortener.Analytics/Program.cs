@@ -27,11 +27,10 @@ builder.Services
     })
 
     .AddValidatorsFromAssemblyContaining<SimpleUrlShortener.Analytics.Domain.Url>()
-    .AddMediatR(configurator =>
+    .AddMediator(configurator =>
     {
-        configurator.RegisterServicesFromAssemblyContaining<SimpleUrlShortener.Analytics.Domain.Url>();
-        configurator.AddOpenBehavior(typeof(LoggingPipelineBehavior<,>));
-        configurator.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
+        configurator.Assemblies = [typeof(SimpleUrlShortener.Analytics.Domain.Url)];
+        configurator.PipelineBehaviors = [typeof(LoggingPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>)];
     })
 
     .AddDbContext<NoTrackingDbContext>()

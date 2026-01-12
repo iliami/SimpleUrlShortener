@@ -1,5 +1,4 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using Mediator;
 using SimpleUrlShortener.UrlShortener.Domain.Events;
 using SimpleUrlShortener.UrlShortener.Domain.Shared;
 
@@ -10,7 +9,7 @@ public class GetUrlUseCase(
     IEventBus eventBus) 
     : IRequestHandler<GetUrlRequest, Result<GetUrlResponse>>
 {
-    public async Task<Result<GetUrlResponse>> Handle(GetUrlRequest request, CancellationToken ct = default)
+    public async ValueTask<Result<GetUrlResponse>> Handle(GetUrlRequest request, CancellationToken ct = default)
     {
         var url = await storage.GetUrl(request.UrlCode, ct);
         if (url is null)

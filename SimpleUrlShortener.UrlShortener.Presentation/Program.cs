@@ -29,11 +29,10 @@ builder.Services
     .AddSingleton<RabbitMqOptions>(sp => sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value)
     .Configure<RabbitMqOptions>(builder.Configuration.GetSection(nameof(RabbitMqOptions)))
     .AddValidatorsFromAssemblyContaining<SimpleUrlShortener.UrlShortener.Domain.Url>()
-    .AddMediatR(configurator =>
+    .AddMediator(configurator =>
     {
-        configurator.RegisterServicesFromAssemblyContaining<SimpleUrlShortener.UrlShortener.Domain.Url>();
-        configurator.AddOpenBehavior(typeof(LoggingPipelineBehavior<,>));
-        configurator.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
+        configurator.Assemblies = [typeof(SimpleUrlShortener.UrlShortener.Domain.Url)];
+        configurator.PipelineBehaviors = [typeof(LoggingPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>)];
     })
     .AddMassTransit(busConfigurator =>
     {

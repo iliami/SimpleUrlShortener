@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Mediator;
 using SimpleUrlShortener.Analytics.Domain.Shared;
 
 namespace SimpleUrlShortener.Analytics.Domain.UseCases.GetAll;

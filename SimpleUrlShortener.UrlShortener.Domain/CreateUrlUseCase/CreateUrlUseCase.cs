@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using Mediator;
 using SimpleUrlShortener.UrlShortener.Domain.Events;
 using SimpleUrlShortener.UrlShortener.Domain.Shared;
 
@@ -10,7 +10,7 @@ public class CreateUrlUseCase(
     : IRequestHandler<CreateUrlRequest, Result<CreateUrlResponse>>
 {
     private static readonly string[] Protocols = ["http://", "https://"];
-    public async Task<Result<CreateUrlResponse>> Handle(CreateUrlRequest request, CancellationToken ct = default)
+    public async ValueTask<Result<CreateUrlResponse>> Handle(CreateUrlRequest request, CancellationToken ct = default)
     {
         var isAnyProtocol = Protocols.Any(p => request.Url.StartsWith(p, StringComparison.InvariantCultureIgnoreCase));
         if (!isAnyProtocol)

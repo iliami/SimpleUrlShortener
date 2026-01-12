@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 using SimpleUrlShortener.UrlShortener.Domain.Shared;
 
@@ -13,14 +13,14 @@ public class LoggingPipelineBehavior<TRequest, TResponse>(ILogger<LoggingPipelin
     private readonly Stopwatch _stopwatch = new();
     private readonly TimeSpan _warningDuration = TimeSpan.FromSeconds(1);
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next,
+    public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken)
     {
         logger.LogDebug("Handling request of type: {RequestType}", typeof(TRequest).Name);
         logger.LogTrace("Request parameters {@values}", request);
 
         _stopwatch.Start();
-        var response = await next();
+        var response = await next(request, cancellationToken);
         _stopwatch.Stop();
 
         var timeSpan = _stopwatch.Elapsed;

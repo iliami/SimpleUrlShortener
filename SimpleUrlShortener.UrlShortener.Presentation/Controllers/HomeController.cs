@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Mvc;
 using SimpleUrlShortener.UrlShortener.Domain.CreateUrlUseCase;
 using SimpleUrlShortener.UrlShortener.Domain.GetUrlUseCase;

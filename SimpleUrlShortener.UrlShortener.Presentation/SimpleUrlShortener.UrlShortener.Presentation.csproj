@@ -5,22 +5,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Domain\SimpleUrlShortener.UrlShortener.Domain.csproj" />
-      <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Infrastructure\SimpleUrlShortener.UrlShortener.Infrastructure.csproj" />
+        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Domain\SimpleUrlShortener.UrlShortener.Domain.csproj"/>
+        <ProjectReference Include="..\SimpleUrlShortener.UrlShortener.Infrastructure\SimpleUrlShortener.UrlShortener.Infrastructure.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.5" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
-      <PackageReference Include="Serilog.AspNetCore" />
+        <PackageReference Include="Mediator.SourceGenerator"/>
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions"/>
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design"/>
+        <PackageReference Include="Serilog.AspNetCore"/>
     </ItemGroup>
 
 </Project>

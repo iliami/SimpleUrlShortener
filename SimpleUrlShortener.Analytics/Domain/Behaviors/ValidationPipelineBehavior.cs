@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using SimpleUrlShortener.Analytics.Domain.Shared;
 
 namespace SimpleUrlShortener.Analytics.Domain.Behaviors;
@@ -11,9 +11,9 @@ public class ValidationPipelineBehavior<TRequest, TResponse>(IValidator<TRequest
     where TRequest : IRequest<TResponse>
     where TResponse : Result
 {
-    public async Task<TResponse> Handle(
+    public async ValueTask<TResponse> Handle(
         TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken ct = default)
     {
         var validationResult = await validator.ValidateAsync(request, ct);
@@ -38,6 +38,6 @@ public class ValidationPipelineBehavior<TRequest, TResponse>(IValidator<TRequest
             return result as TResponse ?? throw new InvalidOperationException();
         }
 
-        return await next();
+        return await next(request, ct);
     }
 }
