@@ -1,27 +1,18 @@
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
-using SimpleUrlShortener.UrlShortener.Domain.CreateUrlUseCase;
-using SimpleUrlShortener.UrlShortener.Domain.GetUrlUseCase;
-using SimpleUrlShortener.UrlShortener.Domain.Shared;
+using SimpleUrlShortener.UrlShortener.Domain.Core;
+using SimpleUrlShortener.UrlShortener.Domain.Application.UseCases;
 using SimpleUrlShortener.UrlShortener.Presentation.Models;
 
 namespace SimpleUrlShortener.UrlShortener.Presentation.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IMediator mediator, ILogger<HomeController> logger) : Controller
 {
-    private readonly ILogger<HomeController> _logger;
-
-    public HomeController(ILogger<HomeController> logger)
-    {
-        _logger = logger;
-    }
-
     public IActionResult Index() => View();
 
     [HttpGet("/")]
     public async Task<IActionResult> CreateCode(
         [FromQuery] string u,
-        [FromServices] IMediator mediator, 
         CancellationToken ct)
     {
         if (u is null or "")
@@ -29,61 +20,46 @@ public class HomeController : Controller
             return View("Index");
         }
 
-        var request = new CreateUrlRequest(u);
-        var result = await mediator.Send(request, ct);
-
-        return result.Match(
-            error =>
+        try
+        {
+            var request = new CreateShortUrlRequest(new OriginalUrl(u));
+            var response = await mediator.Send(request, ct);
+            var httpContextRequest = HttpContext.Request;
+            var host = httpContextRequest.Host.Value;
+            if (host is null)
             {
-                if (error.Code is not Error.CommonCodes.Validation)
-                {
-                    _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
-                }
-                return error.Code switch
-                {
-                    Error.CommonCodes.Validation => View("Error400"),
-                    _ => View("Error500")
-                };
-            },
-            value =>
-            {
-                var httpContextRequest = HttpContext.Request;
-                var host = httpContextRequest.Host.Value;
-                var scheme = httpContextRequest.Scheme;
-                var shortUrl = $"{scheme}://{host}/{value.Code}";
-                
-                return View("Result",
-                    new UrlViewModel { OriginalUrl = value.OriginalUrl, ShortenedUrl = shortUrl });
-            });
+                return View("Error500");
+            }
+            var scheme = httpContextRequest.Scheme;
+            var shortUrl = $"{scheme}://{host}/{response.CodePrefix}{response.Code.Value}";
+            
+            return View("Result",
+                new UrlViewModel { OriginalUrl = request.Original.Value, ShortenedUrl = shortUrl });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Exception at CreateCode {Exception}", ex);
+            return View("Error400");
+        }
     }
 
     [HttpGet("/{urlCode:required}")]
     public async Task<IActionResult> Index(
         string urlCode,
-        [FromServices] IMediator mediator,
         CancellationToken ct)
     {
-        var request = new GetUrlRequest(urlCode);
-        var result = await mediator.Send(request, ct);
-
-        return result.Match<IActionResult>(
-            error =>
-            {
-                if (error.Code is not Error.CommonCodes.Validation)
-                {
-                    _logger.LogError("Error {Error} occurred at {EndpointName}", error, nameof(CreateCode));
-                }
-                return error.Code switch
-                {
-                    Error.CommonCodes.Validation => View("Error400"),
-                    _ => View("Error500")
-                };
-            },
-            value =>
-            {
-                HttpContext.Response.Redirect(value.OriginalUrl);
-                return Redirect(value.OriginalUrl)!;
-            });
+        try
+        {
+            var request = new GetOriginalUrlRequest(new UrlCode(urlCode[1..]));
+            var response = await mediator.Send(request, ct);
+            HttpContext.Response.Redirect(response.Original.Value);
+            return Redirect(response.Original.Value);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Exception at Index {Exception}", ex);
+            return View("Error400");
+        }
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
