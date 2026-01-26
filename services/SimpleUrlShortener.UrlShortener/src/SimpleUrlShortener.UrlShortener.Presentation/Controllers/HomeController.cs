@@ -1,3 +1,4 @@
+using System.Net;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 using SimpleUrlShortener.UrlShortener.Domain.Core;
@@ -8,6 +9,7 @@ namespace SimpleUrlShortener.UrlShortener.Presentation.Controllers;
 
 public class HomeController(IMediator mediator, ILogger<HomeController> logger) : Controller
 {
+    private static IPAddress DefaultIpAddress = IPAddress.Parse("8.8.8.8");
     public IActionResult Index() => View();
 
     [HttpGet("/")]
@@ -50,7 +52,10 @@ public class HomeController(IMediator mediator, ILogger<HomeController> logger) 
     {
         try
         {
-            var request = new GetOriginalUrlRequest(new UrlCode(urlCode[1..]));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress ?? DefaultIpAddress; // RemoteIpAddress can be the ip address of proxy (i.e. nginx) 
+            var request = new GetOriginalUrlRequest(
+                new UrlCode(urlCode[1..]), 
+                new GetOriginalUrlRequest.RequestMetadata(ipAddress));
             var response = await mediator.Send(request, ct);
             HttpContext.Response.Redirect(response.Original.Value);
             return Redirect(response.Original.Value);

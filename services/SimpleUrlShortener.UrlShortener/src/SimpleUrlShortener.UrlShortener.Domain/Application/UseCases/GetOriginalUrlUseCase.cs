@@ -1,10 +1,14 @@
+using System.Net;
 using Mediator;
 using SimpleUrlShortener.UrlShortener.Domain.Core;
 using SimpleUrlShortener.UrlShortener.Domain.Shared;
 
 namespace SimpleUrlShortener.UrlShortener.Domain.Application.UseCases;
 
-public record GetOriginalUrlRequest(UrlCode Code) : IRequest<GetOriginalUrlResponse>;
+public record GetOriginalUrlRequest(UrlCode Code, GetOriginalUrlRequest.RequestMetadata Metadata) : IRequest<GetOriginalUrlResponse>
+{
+    public record RequestMetadata(IPAddress IpAddress);
+}
 
 public record GetOriginalUrlResponse(OriginalUrl Original);
 
@@ -33,7 +37,8 @@ public class GetOriginalUrlUseCase(
             settings.InstancePrefix,
             urlMapping.Code.Value,
             urlMapping.Original.Value,
-            DateTimeOffset.Now);
+            DateTimeOffset.Now,
+            request.Metadata.IpAddress.ToString());
         await eventBus.Publish(message, cancellationToken);
 
         return new GetOriginalUrlResponse(urlMapping.Original);
