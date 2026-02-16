@@ -17,6 +17,7 @@
 
     <ItemGroup>
         <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
     </ItemGroup>
 
 </Project>

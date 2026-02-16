@@ -5,8 +5,6 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <AnalysisMode>Recommended</AnalysisMode>
-        <OutputPath>$(SolutionDir)src\bin\$(Configuration)\</OutputPath>
-        <IntermediateOutputPath>$(SolutionDir)src\obj\$(Configuration)\</IntermediateOutputPath>
     </PropertyGroup>
     
     <ItemGroup>

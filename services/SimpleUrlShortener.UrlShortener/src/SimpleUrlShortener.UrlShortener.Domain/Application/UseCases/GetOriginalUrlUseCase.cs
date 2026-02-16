@@ -37,7 +37,7 @@ public class GetOriginalUrlUseCase(
             settings.InstancePrefix,
             urlMapping.Code.Value,
             urlMapping.Original.Value,
-            DateTimeOffset.Now,
+            DateTimeOffset.UtcNow,
             request.Metadata.IpAddress.ToString());
         await eventBus.Publish(message, cancellationToken);
 

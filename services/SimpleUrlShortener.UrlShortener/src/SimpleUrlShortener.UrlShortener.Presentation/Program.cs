@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SimpleUrlShortener.UrlShortener.Domain.Application;
 using SimpleUrlShortener.UrlShortener.Infrastructure;
+using SimpleUrlShortener.UrlShortener.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,13 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
+}
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    using var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 app.UseExceptionHandler("/error");

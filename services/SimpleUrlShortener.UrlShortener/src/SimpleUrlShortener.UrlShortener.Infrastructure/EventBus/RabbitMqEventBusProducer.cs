@@ -24,7 +24,7 @@ public class RabbitMqEventBusProducer(
 
     public async Task Publish(EventBusMessage eventBusMessage, CancellationToken ct = default)
     {
-        var integrationEvent = IntegrationEvent.From(eventBusMessage);
+        var integrationEvent = eventBusMessage.ToIntegrationEvent();
         try
         {
             await using var channel = await CreateChannelAsync();
@@ -32,6 +32,13 @@ public class RabbitMqEventBusProducer(
             await SetupExchange(channel, integrationEvent);
 
             var properties = CreateBasicProperties(integrationEvent.Message);
+
+            logger.LogInformation(
+                "Publishing event: {EventId}. Exchange: {ExchangeName}. Exchange type: {ExchangeType}. Routing key: {RoutingKey}",
+                integrationEvent.Message.MessageId, 
+                integrationEvent.ExchangeName, 
+                integrationEvent.ExchangeType,
+                integrationEvent.RoutingKey);
 
             await PublishEvent(
                 channel,
@@ -149,6 +156,8 @@ public class RabbitMqEventBusProducer(
                             basicProperties: properties);
                     }
                 }
+
+                break;
             }
             catch (TimeoutException ex)
             {
@@ -188,7 +197,7 @@ public class RabbitMqEventBusProducer(
 
         return properties;
     }
-    
+
     private static bool IsTransient(Exception ex) => ex switch
     {
         OperationInterruptedException => true,

@@ -62,7 +62,7 @@ public class CreateShortUrlUseCase(
             settings.InstancePrefix,
             urlMapping.Code.Value,
             urlMapping.Original.Value,
-            DateTimeOffset.Now);
+            DateTimeOffset.UtcNow);
         await eventBus.Publish(message, cancellationToken);
         return new CreateShortUrlResponse(settings.InstancePrefix, urlCode);
     }

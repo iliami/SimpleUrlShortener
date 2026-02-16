@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using SimpleUrlShortener.UrlShortener.Domain.Shared;
 
-namespace SimpleUrlShortener.UrlShortener.Infrastructure.EventBus;
+namespace SimpleUrlShortener.UrlShortener.Infrastructure.EventBus.Shared;
 
 public class EventBusMessagePolymorphicTypeResolver : DefaultJsonTypeInfoResolver
 {
