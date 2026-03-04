@@ -12,13 +12,23 @@ internal static class ServiceCollectionExtensions
     public static (IServiceCollection Services, IConfiguration Configuration) AddClients(
         this (IServiceCollection Services, IConfiguration Configuration) builder)
     {
-        var urlShortenerAddressString = builder.Configuration["Clients:UrlShortener"]
+        var urlShortenerAddressString = builder.Configuration["Clients:UrlShortener:Url"]
                                         ?? throw new Exception("UrlShortenerAddress is missing");
+        urlShortenerAddressString = urlShortenerAddressString.Trim().TrimEnd("/").ToString() + "/";
+
+        var urlShortenerApiKey = builder.Configuration["Clients:UrlShortener:ApiKey"];
 
         builder.Services
             .AddHttpClient<IUrlShortenerClient, UrlShortenerHttpClient>(
                 "url-shortener",
-                client => { client.BaseAddress = new Uri(urlShortenerAddressString); })
+                client =>
+                {
+                    client.BaseAddress = new Uri(urlShortenerAddressString);
+                    if (urlShortenerApiKey is not null)
+                    {
+                        client.DefaultRequestHeaders.Add("X-API-KEY", urlShortenerApiKey);
+                    }
+                })
             .AddResilienceHandler(
                 "url-shortener",
                 pipelineBuilder =>

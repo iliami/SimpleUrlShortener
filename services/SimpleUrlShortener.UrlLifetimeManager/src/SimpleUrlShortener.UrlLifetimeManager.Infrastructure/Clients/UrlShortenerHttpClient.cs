@@ -14,7 +14,7 @@ public class UrlShortenerHttpClient(
         try
         {
             using var response = await httpClient.DeleteAsync(
-                $"/{urlCode.Value}", 
+                $"api/{urlCode.Value}", 
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
