@@ -1,8 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using SimpleUrlShortener.AnalyticsCollector.API.Endpoints;
+using SimpleUrlShortener.UrlLifetimeManager.API.Endpoints;
 
-namespace SimpleUrlShortener.AnalyticsCollector.API;
+namespace SimpleUrlShortener.UrlLifetimeManager.API;
 
 public static class EndpointExtensions
 {

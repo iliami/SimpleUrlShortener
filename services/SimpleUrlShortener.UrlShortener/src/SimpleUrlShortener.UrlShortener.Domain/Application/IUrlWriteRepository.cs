@@ -5,4 +5,5 @@ namespace SimpleUrlShortener.UrlShortener.Domain.Application;
 public interface IUrlWriteRepository
 {
     Task<bool> Save(UrlMapping urlMapping, CancellationToken cancellationToken = default);
+    Task<bool> Delete(UrlMapping urlMapping, CancellationToken cancellationToken = default);
 }

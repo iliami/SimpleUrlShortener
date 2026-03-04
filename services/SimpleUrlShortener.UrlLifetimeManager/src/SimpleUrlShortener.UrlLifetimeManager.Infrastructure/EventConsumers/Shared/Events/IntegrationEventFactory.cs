@@ -1,10 +1,10 @@
-using SimpleUrlShortener.UrlShortener.Domain.Shared;
+using SimpleUrlShortener.UrlLifetimeManager.Domain.Shared;
 
-namespace SimpleUrlShortener.UrlShortener.Infrastructure.EventBus.Shared.Events;
+namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.EventConsumers.Shared.Events;
 
 public static class IntegrationEventFactory
 {
-    public static IntegrationEvent ToIntegrationEvent(this EventBusMessage eventBusMessage) 
+    public static IntegrationEvent ToIntegrationEvent(this EventBusMessage eventBusMessage)
         => eventBusMessage switch
         {
             UrlCreatedMessage message => From(message),
@@ -20,7 +20,7 @@ public static class IntegrationEventFactory
             RabbitMQ.Client.ExchangeType.Direct,
             "url.created");
     }
-    
+
     private static IntegrationEvent From(UrlRedirectedMessage message)
     {
         return new IntegrationEvent(
@@ -28,14 +28,5 @@ public static class IntegrationEventFactory
             "urls",
             RabbitMQ.Client.ExchangeType.Direct,
             "url.redirected");
-    }
-
-    private static IntegrationEvent From(UrlDeletedMessage message)
-    {
-        return new IntegrationEvent(
-            new IntegrationEventMessage(message),
-            "urls",
-            RabbitMQ.Client.ExchangeType.Direct,
-            "url.deleted");
     }
 }
