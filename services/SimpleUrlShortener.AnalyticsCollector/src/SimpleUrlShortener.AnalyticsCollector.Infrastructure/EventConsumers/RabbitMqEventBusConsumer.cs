@@ -17,6 +17,7 @@ public class RabbitMqEventBusConsumer(
 {
     private const string QueueUrlCreated = "analytics-collector.url.created";
     private const string QueueUrlRedirected = "analytics-collector.url.redirected";
+    private const string QueueUrlDeleted = "analytics-collector.url.deleted";
 
     private static readonly Lazy<JsonSerializerOptions> JsonSerializerOptions = new(
         new JsonSerializerOptions
@@ -94,6 +95,17 @@ public class RabbitMqEventBusConsumer(
             queue: QueueUrlRedirected,
             exchange: ExchangeName,
             routingKey: "url.redirected");
+        
+        await _channel.QueueDeclareAsync(
+            queue: QueueUrlDeleted,
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        await _channel.QueueBindAsync(
+            queue: QueueUrlDeleted,
+            exchange: ExchangeName,
+            routingKey: "url.deleted");
 
         logger.LogInformation("Queues declared and bound successfully");
     }

@@ -9,6 +9,7 @@ public static class IntegrationEventFactory
         {
             UrlCreatedMessage message => From(message),
             UrlRedirectedMessage message => From(message),
+            UrlDeletedMessage message => From(message),
             _ => throw new NotImplementedException()
         };
 
@@ -28,5 +29,14 @@ public static class IntegrationEventFactory
             "urls",
             RabbitMQ.Client.ExchangeType.Direct,
             "url.redirected");
+    }
+
+    private static IntegrationEvent From(UrlDeletedMessage message)
+    {
+        return new IntegrationEvent(
+            new IntegrationEventMessage(message),
+            "urls",
+            RabbitMQ.Client.ExchangeType.Direct,
+            "url.deleted");
     }
 }

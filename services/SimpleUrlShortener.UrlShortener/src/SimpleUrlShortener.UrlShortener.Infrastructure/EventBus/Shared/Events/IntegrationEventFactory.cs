@@ -9,6 +9,7 @@ public static class IntegrationEventFactory
         {
             UrlCreatedMessage message => From(message),
             UrlRedirectedMessage message => From(message),
+            UrlDeletedMessage message => From(message),
             _ => throw new NotImplementedException()
         };
 
