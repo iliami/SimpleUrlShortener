@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using SimpleUrlShortener.UrlShortener.API;
 using SimpleUrlShortener.UrlShortener.Domain.Application;
 using SimpleUrlShortener.UrlShortener.Infrastructure;
 using SimpleUrlShortener.UrlShortener.Infrastructure.Persistence;
@@ -19,18 +20,13 @@ builder.Services
                                 HttpLoggingFields.RequestBody | HttpLoggingFields.RequestHeaders |
                                 HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
     })
-    .AddControllersWithViews();
+    .AddSwaggerGen();
 
 var di = (builder.Services, builder.Configuration);
 
-di.AddApplication().AddInfrastructure();
+di.AddApplication().AddInfrastructure().AddEndpoints();
 
 var app = builder.Build();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
 
 if (app.Environment.IsDevelopment())
 {
@@ -39,17 +35,13 @@ if (app.Environment.IsDevelopment())
     db.Database.Migrate();
 }
 
-app.UseExceptionHandler("/error");
+var apiPrefix = app.MapGroup("api/");
+
+app.MapEndpoints(apiPrefix);
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();
