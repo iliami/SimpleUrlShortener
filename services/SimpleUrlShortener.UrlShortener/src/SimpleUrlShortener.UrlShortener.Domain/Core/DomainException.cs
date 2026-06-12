@@ -1,15 +1,16 @@
 namespace SimpleUrlShortener.UrlShortener.Domain.Core;
 
-public enum DomainExceptionCode
-{
-    NotFound = 404,
-    Default = 500
-}
-
 public class DomainException(
-    string message,
-    DomainExceptionCode code = DomainExceptionCode.Default)
-    : Exception(message)
+    string message)
+    : Exception(message);
+
+public class NotFoundException<T> : DomainException
 {
-    public DomainExceptionCode Code { get; } = code;
+    public NotFoundException() : base($"Entity of type {typeof(T)} not found")
+    {
+    }
+
+    public NotFoundException(string info) : base($"Entity of type {typeof(T)} not found: {info}")
+    {
+    }
 }

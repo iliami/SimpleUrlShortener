@@ -28,7 +28,7 @@ public class UrlDeletedEventMessageHandler(
                 await mediator.Send(
                     useCaseRequest, cancellationToken);
             }
-            catch (NotFoundException ex) when (ex.EntityType == typeof(UrlMapping))
+            catch (NotFoundException<UrlMapping>)
             {
                 logger.LogCritical(
                     "Could not find url mapping: InstancePrefix={InstancePrefix} UrlCode={UrlCode}",

@@ -2,7 +2,13 @@ namespace SimpleUrlShortener.UrlLifetimeManager.Domain.Core;
 
 public class DomainException(string message) : Exception(message);
 
-public class NotFoundException(Type entityType) : DomainException($"Entity of type {entityType} not found")
+public class NotFoundException<T> : DomainException
 {
-    public Type EntityType { get; } = entityType;
+    public NotFoundException() : base($"Entity of type {typeof(T)} not found")
+    {
+    }
+
+    public NotFoundException(string info) : base($"Entity of type {typeof(T)} not found: {info}")
+    {
+    }
 }

@@ -29,9 +29,8 @@ public class GetOriginalUrlUseCase(
         var urlMapping = await readRepo.GetByCode(urlCode, cancellationToken);
         if (urlMapping is null)
         {
-            throw new DomainException(
-                $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}",
-                DomainExceptionCode.NotFound);
+            throw new NotFoundException<UrlMapping>(
+                $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}");
         }
 
         var message = new UrlRedirectedMessage(

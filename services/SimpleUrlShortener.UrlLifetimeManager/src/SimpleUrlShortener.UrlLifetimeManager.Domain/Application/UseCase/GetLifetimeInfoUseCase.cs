@@ -20,7 +20,7 @@ public class GetLifetimeInfoUseCase(
         CancellationToken cancellationToken)
     {
         var um = await storage.TryGet(request.Code, cancellationToken)
-                 ?? throw new NotFoundException(typeof(UrlMapping));
+                 ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
         return new GetLifetimeInfoUseCaseResponse(um.CreatedAt, um.ExpiresAt);
     }

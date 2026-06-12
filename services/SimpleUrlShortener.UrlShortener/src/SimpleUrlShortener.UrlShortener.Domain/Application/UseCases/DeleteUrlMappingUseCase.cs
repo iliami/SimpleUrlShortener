@@ -19,9 +19,8 @@ public class DeleteUrlMappingUseCase(
         var readRepo = shardProvider.GetReadRepository(shardId);
 
         var urlMapping = await readRepo.GetByCode(urlCode, cancellationToken)
-                         ?? throw new DomainException(
-                             $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}",
-                             DomainExceptionCode.NotFound);
+                         ?? throw new NotFoundException<UrlMapping>(
+                             $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}");
 
         var writeRepo = shardProvider.GetWriteRepository(shardId);
         var deleteResult = await writeRepo.Delete(urlMapping, cancellationToken);

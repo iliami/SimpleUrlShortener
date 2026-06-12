@@ -9,12 +9,12 @@ public class DeleteUrlMappingEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/{urlCode:required}", Handle)
+        app.MapDelete("{urlCode:required}", Handle)
             .AddEndpointFilter<ApiAuthorizationEndpointFilter>();
     }
 
     private static async Task<IResult> Handle(
-        string urlCode,
+        [FromRoute] string urlCode,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<GetOriginalUrlEndpoint> logger,
         CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ public class DeleteUrlMappingEndpoint : IEndpoint
             await mediator.Send(request, cancellationToken);
             return TypedResults.Ok();
         }
-        catch (DomainException ex) when (ex.Code == DomainExceptionCode.NotFound)
+        catch (NotFoundException<UrlMapping>)
         {
             return TypedResults.NotFound();
         }

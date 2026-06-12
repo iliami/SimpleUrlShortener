@@ -12,11 +12,11 @@ public class GetOriginalUrlEndpoint : IEndpoint
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/{urlCode:required}", Handle);
+        app.MapGet("{urlCode:required}", Handle);
     }
 
     private static async Task<IResult> Handle(
-        string urlCode,
+        [FromRoute] string urlCode,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<GetOriginalUrlEndpoint> logger,
         HttpContext httpContext,
@@ -31,9 +31,9 @@ public class GetOriginalUrlEndpoint : IEndpoint
                 new UrlCode(urlCode[1..]),
                 new GetOriginalUrlRequest.RequestMetadata(ipAddress));
             var response = await mediator.Send(request, cancellationToken);
-            return TypedResults.Redirect(response.Original.Value);
+            return TypedResults.Ok(response.Original.Value);
         }
-        catch (DomainException ex) when (ex.Code == DomainExceptionCode.NotFound)
+        catch (NotFoundException<UrlMapping>)
         {
             return TypedResults.NotFound();
         }

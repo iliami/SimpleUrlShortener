@@ -13,11 +13,7 @@ public class DeleteUrlMappingUseCase(
     public async ValueTask<Unit> Handle(DeleteUrlMappingRequest request, CancellationToken cancellationToken)
     {
         var urlMapping = await storage.TryGet(request.Code, cancellationToken)
-                         ?? throw new NotFoundException(typeof(UrlMapping),
-                             new Dictionary<string, string>
-                             {
-                                 [nameof(UrlMapping.Code)] = request.Code.Value
-                             });
+                         ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
         await storage.Delete(urlMapping, cancellationToken);
 

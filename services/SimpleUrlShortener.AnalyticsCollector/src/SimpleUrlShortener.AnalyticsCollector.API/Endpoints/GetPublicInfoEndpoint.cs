@@ -9,17 +9,30 @@ public class GetPublicInfoEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("{urlCode}/info", Handle);
+        app.MapGet("{urlCode}", Handle);
     }
 
     private static async Task<IResult> Handle(
         [FromRoute] string urlCode,
         [FromServices] IMediator mediator,
+        [FromServices] ILogger<GetPublicInfoEndpoint> logger,
         CancellationToken cancellationToken)
     {
-        var code = new UrlCode(urlCode);
-        var request = new GetPublicInfoUseCaseRequest(code);
-        var response = await mediator.Send(request, cancellationToken);
-        return Results.Ok(new { response.TotalRedirectionCount, response.LastRedirectionDate });
+        try
+        {
+            var code = new UrlCode(urlCode);
+            var request = new GetPublicInfoUseCaseRequest(code);
+            var response = await mediator.Send(request, cancellationToken);
+            return TypedResults.Ok(response);
+        }
+        catch (NotFoundException<UrlMapping>)
+        {
+            return TypedResults.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Exception at GetLifetimeInfoEndpoint {Exception}", ex);
+            return TypedResults.InternalServerError();
+        }
     }
 }

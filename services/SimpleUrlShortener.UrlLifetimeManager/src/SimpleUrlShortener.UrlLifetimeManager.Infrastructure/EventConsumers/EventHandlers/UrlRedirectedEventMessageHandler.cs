@@ -38,7 +38,7 @@ public class UrlRedirectedEventMessageHandler(
                         eventBusMessage.OriginalUrl);
                 }
             }
-            catch (NotFoundException ex) when (ex.EntityType == typeof(UrlMapping))
+            catch (NotFoundException<UrlMapping>)
             {
                 var createUseCaseRequest = new CreateOrUpdateUrlMappingUseCaseRequest(
                     new UrlCode(eventBusMessage.InstancePrefix, eventBusMessage.UrlCode),
