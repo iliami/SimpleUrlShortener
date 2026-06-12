@@ -33,7 +33,9 @@ public class AppDbContext(
 
         modelBuilder.Entity<UrlMappingEntity>().Property(u => u.Original).HasMaxLength(OriginalUrl.MaxLength);
 
-        modelBuilder.Entity<UrlMappingEntity>().HasMany(u => u.UrlMappingRedirections).WithOne();
+        modelBuilder.Entity<UrlMappingEntity>().HasMany(u => u.UrlMappingRedirections)
+            .WithOne()
+            .OnDelete(DeleteBehavior.Cascade);
 
         // UrlMappingRedirectionEntity
         modelBuilder.Entity<UrlMappingRedirectionEntity>().ToTable("UrlMappingRedirection");

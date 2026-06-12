@@ -2,37 +2,37 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence;
+using SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.Migrations
+namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260612180521_CascadingRemoval")]
+    partial class CascadingRemoval
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("url-lifetime-manager")
+                .HasDefaultSchema("analytics-collector")
                 .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.UrlMappingEntity", b =>
+            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>
                 {
                     b.Property<string>("Code")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Original")
@@ -42,14 +42,25 @@ namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.Migra
 
                     b.HasKey("Code");
 
-                    b.ToTable("UrlMapping", "url-lifetime-manager");
+                    b.ToTable("UrlMapping", "analytics-collector");
                 });
 
-            modelBuilder.Entity("SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.UrlMappingRedirectionEntity", b =>
+            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingRedirectionEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
 
                     b.Property<DateTimeOffset>("OccuredOn")
                         .HasColumnType("timestamp with time zone");
@@ -61,18 +72,18 @@ namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.Migra
 
                     b.HasIndex("UrlMappingEntityCode");
 
-                    b.ToTable("UrlMappingRedirection", "url-lifetime-manager");
+                    b.ToTable("UrlMappingRedirection", "analytics-collector");
                 });
 
-            modelBuilder.Entity("SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.UrlMappingRedirectionEntity", b =>
+            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingRedirectionEntity", b =>
                 {
-                    b.HasOne("SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.UrlMappingEntity", null)
+                    b.HasOne("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", null)
                         .WithMany("UrlMappingRedirections")
                         .HasForeignKey("UrlMappingEntityCode")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence.UrlMappingEntity", b =>
+            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>
                 {
                     b.Navigation("UrlMappingRedirections");
                 });

@@ -95,7 +95,7 @@ public class RabbitMqEventBusConsumer(
             queue: QueueUrlRedirected,
             exchange: ExchangeName,
             routingKey: "url.redirected");
-        
+
         await _channel.QueueDeclareAsync(
             queue: QueueUrlDeleted,
             durable: true,
@@ -142,6 +142,12 @@ public class RabbitMqEventBusConsumer(
 
         await _channel!.BasicConsumeAsync(
             queue: QueueUrlRedirected,
+            autoAck: settings.AutoAck,
+            consumer: consumer,
+            cancellationToken: cancellationToken);
+
+        await _channel!.BasicConsumeAsync(
+            queue: QueueUrlDeleted,
             autoAck: settings.AutoAck,
             consumer: consumer,
             cancellationToken: cancellationToken);

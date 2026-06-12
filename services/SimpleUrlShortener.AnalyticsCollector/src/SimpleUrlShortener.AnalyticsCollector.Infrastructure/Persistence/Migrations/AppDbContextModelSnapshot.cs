@@ -76,7 +76,8 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
                 {
                     b.HasOne("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", null)
                         .WithMany("UrlMappingRedirections")
-                        .HasForeignKey("UrlMappingEntityCode");
+                        .HasForeignKey("UrlMappingEntityCode")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>

@@ -25,6 +25,10 @@ public class DeleteUrlMappingEndpoint : IEndpoint
             await mediator.Send(request, cancellationToken);
             return TypedResults.Ok();
         }
+        catch (DomainException ex) when (ex.Code == DomainExceptionCode.NotFound)
+        {
+            return TypedResults.NotFound();
+        }
         catch (Exception ex)
         {
             logger.LogError("Exception at DeleteUrlMappingEndpoint {Exception}", ex);

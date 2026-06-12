@@ -30,7 +30,8 @@ public class GetOriginalUrlUseCase(
         if (urlMapping is null)
         {
             throw new DomainException(
-                $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}");
+                $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}",
+                DomainExceptionCode.NotFound);
         }
 
         var message = new UrlRedirectedMessage(

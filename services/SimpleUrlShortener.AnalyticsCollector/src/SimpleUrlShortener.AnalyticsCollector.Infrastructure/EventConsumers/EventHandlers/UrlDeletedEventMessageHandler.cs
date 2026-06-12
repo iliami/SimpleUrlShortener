@@ -14,7 +14,7 @@ public class UrlDeletedEventMessageHandler(
     public async Task HandleAsync(UrlDeletedMessage eventBusMessage, CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
-            "Processing UrlDeleted event: InstancePrefix={InstancePrefix} UrlCode={UrlCode}}",
+            "Processing UrlDeleted event: InstancePrefix={InstancePrefix} UrlCode={UrlCode}",
             eventBusMessage.InstancePrefix,
             eventBusMessage.UrlCode);
 

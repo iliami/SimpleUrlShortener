@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.Logging;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Application;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Core;
@@ -17,6 +18,12 @@ public class UrlShortenerHttpClient(
                 $"api/{urlCode.Value}", 
                 cancellationToken);
 
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                logger.LogWarning("UrlShortener delete failed with not found error: {UrlCode}", urlCode);
+                return;
+            }
+            
             response.EnsureSuccessStatusCode();
 
             logger.LogInformation("UrlShortener delete success: {UrlCode}", urlCode);

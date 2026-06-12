@@ -33,6 +33,10 @@ public class GetOriginalUrlEndpoint : IEndpoint
             var response = await mediator.Send(request, cancellationToken);
             return TypedResults.Redirect(response.Original.Value);
         }
+        catch (DomainException ex) when (ex.Code == DomainExceptionCode.NotFound)
+        {
+            return TypedResults.NotFound();
+        }
         catch (Exception ex)
         {
             logger.LogError("Exception at GetOriginalUrlEndpoint {Exception}", ex);
