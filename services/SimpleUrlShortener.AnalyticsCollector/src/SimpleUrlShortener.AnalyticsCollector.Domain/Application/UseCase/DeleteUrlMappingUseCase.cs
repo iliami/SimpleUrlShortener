@@ -1,6 +1,5 @@
 using Mediator;
 using SimpleUrlShortener.AnalyticsCollector.Domain.Core;
-using SimpleUrlShortener.AnalyticsCollector.Domain.Shared;
 
 namespace SimpleUrlShortener.AnalyticsCollector.Domain.Application.UseCase;
 
@@ -15,7 +14,8 @@ public class DeleteUrlMappingUseCase(
         var urlMapping = await storage.TryGet(request.Code, cancellationToken)
                          ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
-        await storage.Delete(urlMapping, cancellationToken);
+        urlMapping = urlMapping with { IsRevoked = true };
+        await storage.Save(urlMapping, cancellationToken);
 
         return Unit.Value;
     }
@@ -24,5 +24,5 @@ public class DeleteUrlMappingUseCase(
 public interface IDeleteUrlMappingStorage : IStorage
 {
     Task<UrlMapping?> TryGet(UrlCode code, CancellationToken ct);
-    Task<bool> Delete(UrlMapping urlMapping, CancellationToken cancellationToken = default);
+    Task<bool> Save(UrlMapping urlMapping, CancellationToken cancellationToken = default);
 }

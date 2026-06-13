@@ -22,6 +22,7 @@ public class CreateOrUpdateUrlMappingUseCase(ICreateOrUpdateUrlMappingStorage st
                                    request.Code,
                                    request.Original,
                                    request.CreatedAt.ToUniversalTime(),
+                                   false,
                                    []);
 
         var urlMapping = storedUrlMapping with

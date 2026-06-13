@@ -13,12 +13,12 @@ public class DeleteUrlMappingStorage(
             .FirstOrDefaultAsync(x => x.Code == code.Value, ct)
             .Map();
 
-    public async Task<bool> Delete(UrlMapping urlMapping, CancellationToken cancellationToken = default)
+    public async Task<bool> Save(UrlMapping urlMapping, CancellationToken cancellationToken = default)
     {
         try
         {
             var entity = urlMapping.Map();
-            dbContext.UrlMappings.Remove(entity);
+            dbContext.UrlMappings.Update(entity);
             await dbContext.SaveChangesAsync(cancellationToken);
             dbContext.Entry(entity).State = EntityState.Detached;
 
