@@ -1,0 +1,212 @@
+name: simple-url-shortener
+
+services:
+  url-shortener:
+    container_name: url-shortener
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+    ports:
+      - "25000:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+
+  analytics-collector:
+    container_name: analytics-collector
+    build:
+      context: ../services/SimpleUrlShortener.AnalyticsCollector
+      dockerfile: src/SimpleUrlShortener.AnalyticsCollector.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+    ports:
+      - "25001:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+
+  url-lifetime-manager:
+    container_name: url-lifetime-manager
+    build:
+      context: ../services/SimpleUrlShortener.UrlLifetimeManager
+      dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      Clients__UrlShortener__Url: "url-shortener"
+    ports:
+      - "25002:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      url-shortener:
+        condition: service_started
+
+  postgresql:
+    container_name: postgresql
+    image: postgres:18.1-alpine3.23
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: default_db
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+#    ports:
+#      - "5432:5432"
+    networks:
+      - database
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1g
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d default_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "app=postgresql"
+      - "env=production"
+      - "version=18.1"
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:4.2.2-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_VHOST: /
+    configs:
+      - source: rabbitmq_config
+        target: /etc/rabbitmq/rabbitmq.conf
+        mode: 0444
+      - source: rabbitmq_plugins
+        target: /etc/rabbitmq/enabled_plugins
+        mode: 0444
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/mnesia
+    ports:
+#      - "5672:5672"    # AMQP порт для клиентских подключений
+      - "127.0.0.1:15672:15672"  # HTTP API, management UI и rabbitmqadmin
+#      - "25672:25672"  # порт для межузлового взаимодействия в кластере
+    networks:
+      - messaging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    labels:
+      - "app=rabbitmq"
+      - "env=production"
+      - "version=4.2.2"
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:9.11.0
+    environment:
+      PGADMIN_DEFAULT_EMAIL: simpleurlshortener@domain.com
+      PGADMIN_DEFAULT_PASSWORD: simpleurlshortener
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:24999:80"
+    networks:
+      - database
+    restart: always
+
+configs:
+  rabbitmq_config:
+    file: ./configs/rabbitmq/rabbitmq.conf
+  rabbitmq_plugins:
+    file: ./configs/rabbitmq/enabled_plugins
+
+volumes:
+  postgresql_data:
+    name: "postgresql"
+  rabbitmq_data:
+    name: "rabbitmq"
+  pgadmin_data:
+    name: "pgadmin"
+
+networks:
+  backend:
+    driver: bridge
+  database:
+    driver: bridge
+  messaging:
+    driver: bridge

@@ -7,6 +7,9 @@
         <Content Update="@(Content)">
             <Visible Condition="'%(NuGetItemType)' == 'Content'">false</Visible>
         </Content>
+        <Content Include="..\..\.dockerignore">
+          <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
