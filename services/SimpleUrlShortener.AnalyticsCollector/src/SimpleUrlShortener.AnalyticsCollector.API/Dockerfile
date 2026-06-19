@@ -7,6 +7,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["*.props", "./"]
 COPY ["src/SimpleUrlShortener.AnalyticsCollector.API/SimpleUrlShortener.AnalyticsCollector.API.csproj", "src/SimpleUrlShortener.AnalyticsCollector.API/"]
 COPY ["src/SimpleUrlShortener.AnalyticsCollector.Domain/SimpleUrlShortener.AnalyticsCollector.Domain.csproj", "src/SimpleUrlShortener.AnalyticsCollector.Domain/"]
 COPY ["src/SimpleUrlShortener.AnalyticsCollector.Infrastructure/SimpleUrlShortener.AnalyticsCollector.Infrastructure.csproj", "src/SimpleUrlShortener.AnalyticsCollector.Infrastructure/"]

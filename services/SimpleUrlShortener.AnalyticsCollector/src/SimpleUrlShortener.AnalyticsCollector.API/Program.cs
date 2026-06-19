@@ -12,6 +12,13 @@ builder.Host.UseSerilog((context, loggerConfiguration) =>
     loggerConfiguration.ReadFrom.Configuration(context.Configuration);
 });
 
+builder.Host.UseDefaultServiceProvider((context, options) =>
+{
+    options.ValidateScopes = true;
+
+    options.ValidateOnBuild = true;
+});
+
 builder.Services
     .AddHttpLogging(options =>
     {

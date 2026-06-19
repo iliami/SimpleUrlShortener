@@ -19,8 +19,10 @@ internal static class ServiceCollectionExtensions
     private static (IServiceCollection Services, IConfiguration Configuration) AddUrlShortenerClient(
         this (IServiceCollection Services, IConfiguration Configuration) builder)
     {
-                builder.Services.Configure<UrlShortenerOptions>(
+        builder.Services.Configure<UrlShortenerOptions>(
             builder.Configuration.GetSection("Clients:UrlShortener"));
+
+        builder.Services.AddScoped<UrlShortenerApiKeyAuthHandler>();
 
         builder.Services
             .AddHttpClient<IUrlShortenerClient, UrlShortenerHttpClient>(

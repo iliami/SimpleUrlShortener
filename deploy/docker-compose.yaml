@@ -1,8 +1,64 @@
 name: simple-url-shortener
 
 services:
+  db-migrator_url-shortener:
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  db-migrator_analytics-collector:
+    build:
+      context: ../services/SimpleUrlShortener.AnalyticsCollector
+      dockerfile: src/SimpleUrlShortener.AnalyticsCollector.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  db-migrator_url-lifetime-manager:
+    build:
+      context: ../services/SimpleUrlShortener.UrlLifetimeManager
+      dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
   url-shortener:
-    container_name: url-shortener
     build:
       context: ../services/SimpleUrlShortener.UrlShortener
       dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
@@ -31,9 +87,10 @@ services:
         condition: service_healthy
       postgresql:
         condition: service_healthy
+      db-migrator_url-shortener:
+        condition: service_completed_successfully
 
   analytics-collector:
-    container_name: analytics-collector
     build:
       context: ../services/SimpleUrlShortener.AnalyticsCollector
       dockerfile: src/SimpleUrlShortener.AnalyticsCollector.API/Dockerfile
@@ -62,9 +119,10 @@ services:
         condition: service_healthy
       postgresql:
         condition: service_healthy
+      db-migrator_analytics-collector:
+        condition: service_completed_successfully
 
   url-lifetime-manager:
-    container_name: url-lifetime-manager
     build:
       context: ../services/SimpleUrlShortener.UrlLifetimeManager
       dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.API/Dockerfile
@@ -96,18 +154,18 @@ services:
         condition: service_healthy
       url-shortener:
         condition: service_started
+      db-migrator_url-lifetime-manager:
+        condition: service_completed_successfully
 
   postgresql:
-    container_name: postgresql
     image: postgres:18.1-alpine3.23
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: default_db
+      POSTGRES_DB: SimpleUrlShortener
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgresql_data:/var/lib/postgresql/data
+      - postgresql_data:/var/lib/postgresql
 #    ports:
 #      - "5432:5432"
     networks:
@@ -119,7 +177,7 @@ services:
           cpus: '1'
           memory: 1g
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U root -d default_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U root -d SimpleUrlShortener" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -135,7 +193,6 @@ services:
       - "version=18.1"
 
   rabbitmq:
-    container_name: rabbitmq
     image: rabbitmq:4.2.2-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: root
@@ -176,7 +233,6 @@ services:
       - "version=4.2.2"
 
   pgadmin:
-    container_name: pgadmin
     image: dpage/pgadmin4:9.11.0
     environment:
       PGADMIN_DEFAULT_EMAIL: simpleurlshortener@domain.com

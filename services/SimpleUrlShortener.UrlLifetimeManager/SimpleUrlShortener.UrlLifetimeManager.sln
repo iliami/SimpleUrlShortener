@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleUrlShortener.UrlLifet
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleUrlShortener.UrlLifetimeManager.Infrastructure", "src\SimpleUrlShortener.UrlLifetimeManager.Infrastructure\SimpleUrlShortener.UrlLifetimeManager.Infrastructure.csproj", "{D27508FD-5B6D-42A1-BBBB-24B52E6F9CE1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleUrlShortener.UrlLifetimeManager.DbMigrator", "src\SimpleUrlShortener.UrlLifetimeManager.DbMigrator\SimpleUrlShortener.UrlLifetimeManager.DbMigrator.csproj", "{9451ECFE-D657-4E7A-8719-C650E9D5DC6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{D27508FD-5B6D-42A1-BBBB-24B52E6F9CE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D27508FD-5B6D-42A1-BBBB-24B52E6F9CE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D27508FD-5B6D-42A1-BBBB-24B52E6F9CE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9451ECFE-D657-4E7A-8719-C650E9D5DC6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9451ECFE-D657-4E7A-8719-C650E9D5DC6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9451ECFE-D657-4E7A-8719-C650E9D5DC6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9451ECFE-D657-4E7A-8719-C650E9D5DC6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
