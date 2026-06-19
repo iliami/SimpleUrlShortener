@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Application;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Core;
 
-namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Clients;
+namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Clients.UrlShortener;
 
 public class UrlShortenerHttpClient(
     HttpClient httpClient,

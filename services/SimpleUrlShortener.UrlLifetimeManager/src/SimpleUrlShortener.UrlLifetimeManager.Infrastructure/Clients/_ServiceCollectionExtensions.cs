@@ -1,9 +1,10 @@
-using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Options;
 using Polly;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Application;
+using SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Clients.UrlShortener;
 
 namespace SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Clients;
 
@@ -12,23 +13,32 @@ internal static class ServiceCollectionExtensions
     public static (IServiceCollection Services, IConfiguration Configuration) AddClients(
         this (IServiceCollection Services, IConfiguration Configuration) builder)
     {
-        var urlShortenerAddressString = builder.Configuration["Clients:UrlShortener:Url"]
-                                        ?? throw new Exception("UrlShortenerAddress is missing");
-        urlShortenerAddressString = urlShortenerAddressString.Trim().TrimEnd("/").ToString() + "/";
+        return builder.AddUrlShortenerClient();
+    }
 
-        var urlShortenerApiKey = builder.Configuration["Clients:UrlShortener:ApiKey"];
+    private static (IServiceCollection Services, IConfiguration Configuration) AddUrlShortenerClient(
+        this (IServiceCollection Services, IConfiguration Configuration) builder)
+    {
+                builder.Services.Configure<UrlShortenerOptions>(
+            builder.Configuration.GetSection("Clients:UrlShortener"));
 
         builder.Services
             .AddHttpClient<IUrlShortenerClient, UrlShortenerHttpClient>(
                 "url-shortener",
-                client =>
+                (sp, client) =>
                 {
-                    client.BaseAddress = new Uri(urlShortenerAddressString);
-                    if (urlShortenerApiKey is not null)
+                    var optionsMonitor = sp.GetRequiredService<IOptionsMonitor<UrlShortenerOptions>>();
+                    var options = optionsMonitor.CurrentValue;
+
+                    if (string.IsNullOrWhiteSpace(options.Url))
                     {
-                        client.DefaultRequestHeaders.Add("X-API-KEY", urlShortenerApiKey);
+                        throw new InvalidOperationException("UrlShortener Url is missing in configuration.");
                     }
+
+                    var formattedUrl = options.Url.Trim().TrimEnd('/') + "/";
+                    client.BaseAddress = new Uri(formattedUrl);
                 })
+            .AddHttpMessageHandler<UrlShortenerApiKeyAuthHandler>()
             .AddResilienceHandler(
                 "url-shortener",
                 pipelineBuilder =>
