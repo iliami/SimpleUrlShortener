@@ -22,7 +22,7 @@ internal static class ServiceCollectionExtensions
         builder.Services.Configure<UrlShortenerOptions>(
             builder.Configuration.GetSection("Clients:UrlShortener"));
 
-        builder.Services.AddScoped<UrlShortenerApiKeyAuthHandler>();
+        builder.Services.AddTransient<UrlShortenerApiKeyAuthHandler>();
 
         builder.Services
             .AddHttpClient<IUrlShortenerClient, UrlShortenerHttpClient>(
