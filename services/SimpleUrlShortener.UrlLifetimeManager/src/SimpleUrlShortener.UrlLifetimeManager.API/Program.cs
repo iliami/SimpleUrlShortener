@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using SimpleUrlShortener.UrlLifetimeManager.API;
 using SimpleUrlShortener.UrlLifetimeManager.Domain.Application;
@@ -8,17 +12,42 @@ using SimpleUrlShortener.UrlLifetimeManager.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, loggerConfiguration) =>
-{
-    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
-});
+builder.Host.UseSerilog(
+    (context, loggerConfiguration) => { loggerConfiguration.ReadFrom.Configuration(context.Configuration); },
+    false,
+    true);
 
-builder.Host.UseDefaultServiceProvider((context, options) =>
+builder.Host.UseDefaultServiceProvider((_, options) =>
 {
     options.ValidateScopes = true;
-
     options.ValidateOnBuild = true;
 });
+
+var serviceName = builder.Configuration["ThisService:Name"] ?? "UrlLifetimeManager";
+var serviceVersion = builder.Configuration["ThisService:Version"] ?? "unknown";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(serviceName: serviceName, serviceVersion: serviceVersion)
+        .AddAttributes(new Dictionary<string, object>
+        {
+            ["deployment.environment"] = builder.Environment.EnvironmentName
+        }))
+    .UseOtlpExporter()
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
+        .AddRabbitMQInstrumentation()
+        .AddSource($"SimpleUrlShortener.{serviceName}.*")
+    )
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+    )
+    .WithLogging();
 
 builder.Services
     .AddHttpLogging(options =>
