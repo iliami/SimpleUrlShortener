@@ -40,20 +40,3 @@ public static class EndpointExtensions
         return app;
     }
 }
-
-public static class EndpointRegistry
-{
-    private static readonly Dictionary<Assembly, List<Type>> EndpointTypes = new();
-
-    public static void RegisterEndpoints(Assembly moduleAssembly, IEnumerable<Type> endpointTypes)
-    {
-        EndpointTypes[moduleAssembly] = endpointTypes.ToList();
-    }
-
-    public static IEnumerable<Type> GetEndpointTypes(Assembly moduleAssembly)
-    {
-        return EndpointTypes.TryGetValue(moduleAssembly, out var types)
-            ? types
-            : Enumerable.Empty<Type>();
-    }
-}

@@ -29,7 +29,7 @@ public class GetOriginalUrlUseCase(
         var urlMapping = await readRepo.GetByCode(urlCode, cancellationToken);
         if (urlMapping is null)
         {
-            throw new DomainException(
+            throw new NotFoundException<UrlMapping>(
                 $"Cannot find short url {urlCode} with instance prefix {settings.InstancePrefix}");
         }
 

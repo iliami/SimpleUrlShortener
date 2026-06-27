@@ -8,6 +8,7 @@ public class UrlMappingEntity
     public string Code { get; init; } = string.Empty;
     public string Original { get; init; } = string.Empty;
     public DateTimeOffset CreatedAt { get; init; }
+    public bool IsRevoked { get; init; }
     public ICollection<UrlMappingRedirectionEntity> UrlMappingRedirections { get; set; } = [];
 }
 
@@ -19,11 +20,15 @@ public static class UrlMappingEntityMapExtensions
             Code = um.Code.Value,
             Original = um.Original.Value,
             CreatedAt = um.CreatedAt.ToUniversalTime(),
+            IsRevoked = um.IsRevoked,
             UrlMappingRedirections = um.Redirections.Select(x => x.Map()).ToList()
         };
 
     public static UrlMapping Map(this UrlMappingEntity entity)
-        => new(new UrlCode(entity.Code), new OriginalUrl(entity.Original), entity.CreatedAt.ToUniversalTime(),
+        => new(new UrlCode(entity.Code),
+            new OriginalUrl(entity.Original),
+            entity.CreatedAt.ToUniversalTime(),
+            entity.IsRevoked,
             entity.UrlMappingRedirections.Select(x => x.Map()).ToImmutableList());
 
     public static async Task<UrlMapping?> Map(this Task<UrlMappingEntity?> task)

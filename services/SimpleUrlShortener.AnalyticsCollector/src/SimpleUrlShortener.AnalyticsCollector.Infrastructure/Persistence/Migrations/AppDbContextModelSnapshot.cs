@@ -32,6 +32,9 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Original")
                         .IsRequired()
                         .HasMaxLength(2048)
@@ -76,7 +79,8 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
                 {
                     b.HasOne("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", null)
                         .WithMany("UrlMappingRedirections")
-                        .HasForeignKey("UrlMappingEntityCode");
+                        .HasForeignKey("UrlMappingEntityCode")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>

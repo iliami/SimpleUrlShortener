@@ -21,7 +21,7 @@ public class AddUrlMappingRedirectionUseCase(
         CancellationToken cancellationToken)
     {
         var storedUrlMapping = await storage.TryGet(request.Code, cancellationToken)
-                               ?? throw new NotFoundException(typeof(UrlMapping));
+                               ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
         var coordinates = await geoIpService.GetCoordinates(request.Ip, cancellationToken);
 

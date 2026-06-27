@@ -7,6 +7,7 @@ public record UrlMapping(
     UrlCode Code, 
     OriginalUrl Original, 
     DateTimeOffset CreatedAt,
+    bool IsRevoked,
     IImmutableList<UrlMappingRedirection> Redirections);
 
 public readonly record struct UrlCode

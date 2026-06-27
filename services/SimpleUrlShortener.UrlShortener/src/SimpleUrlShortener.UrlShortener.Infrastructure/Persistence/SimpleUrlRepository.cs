@@ -22,6 +22,23 @@ public class SimpleUrlRepository(AppDbContext dbContext) : IUrlWriteRepository, 
         }
     }
 
+    public async Task<bool> Delete(UrlMapping urlMapping, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var entity = urlMapping.Map();
+            dbContext.UrlMappings.Remove(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Entry(entity).State = EntityState.Detached;
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public Task<UrlMapping?> GetByCode(
         in UrlCode urlCode,
         CancellationToken cancellationToken = default)

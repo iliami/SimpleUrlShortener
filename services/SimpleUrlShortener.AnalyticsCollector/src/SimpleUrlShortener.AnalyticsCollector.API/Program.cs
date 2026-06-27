@@ -1,16 +1,51 @@
 using Serilog;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using SimpleUrlShortener.AnalyticsCollector.API;
 using SimpleUrlShortener.AnalyticsCollector.Domain.Application;
 using SimpleUrlShortener.AnalyticsCollector.Infrastructure;
 using SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog((context, loggerConfiguration) =>
+
+builder.Host.UseSerilog(
+    (context, loggerConfiguration) => { loggerConfiguration.ReadFrom.Configuration(context.Configuration); },
+    false,
+    true);
+
+builder.Host.UseDefaultServiceProvider((_, options) =>
 {
-    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+    options.ValidateScopes = true;
+    options.ValidateOnBuild = true;
 });
+
+var serviceName = builder.Configuration["ThisService:Name"] ?? "AnalyticsCollector";
+var serviceVersion = builder.Configuration["ThisService:Version"] ?? "unknown";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(serviceName: serviceName, serviceVersion: serviceVersion)
+        .AddAttributes(new Dictionary<string, object>
+        {
+            ["deployment.environment"] = builder.Environment.EnvironmentName
+        }))
+    .UseOtlpExporter()
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
+        .AddRabbitMQInstrumentation()
+        .AddSource($"SimpleUrlShortener.{serviceName}.*")
+    )
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+    )
+    .WithLogging();
 
 builder.Services
     .AddHttpLogging(options =>

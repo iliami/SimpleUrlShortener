@@ -1,0 +1,401 @@
+name: simple-url-shortener
+
+services:
+  db-migrator_url-shortener:
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  db-migrator_analytics-collector:
+    build:
+      context: ../services/SimpleUrlShortener.AnalyticsCollector
+      dockerfile: src/SimpleUrlShortener.AnalyticsCollector.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  db-migrator_url-lifetime-manager:
+    build:
+      context: ../services/SimpleUrlShortener.UrlLifetimeManager
+      dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.DbMigrator/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+    networks:
+      - database
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 30mb
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  url-shortener:
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+    ports:
+      - "25000:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      db-migrator_url-shortener:
+        condition: service_completed_successfully
+
+  analytics-collector:
+    build:
+      context: ../services/SimpleUrlShortener.AnalyticsCollector
+      dockerfile: src/SimpleUrlShortener.AnalyticsCollector.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+    ports:
+      - "25001:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      db-migrator_analytics-collector:
+        condition: service_completed_successfully
+
+  url-lifetime-manager:
+    build:
+      context: ../services/SimpleUrlShortener.UrlLifetimeManager
+      dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+      Clients__UrlShortener__Url: "http://url-shortener"
+    ports:
+      - "25002:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      url-shortener:
+        condition: service_started
+      db-migrator_url-lifetime-manager:
+        condition: service_completed_successfully
+
+  postgresql:
+    image: postgres:18-alpine3.23
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: SimpleUrlShortener
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    volumes:
+      - postgresql_data:/var/lib/postgresql
+    networks:
+      - database
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1g
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d SimpleUrlShortener" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "app=postgresql"
+      - "env=production"
+      - "version=18.1"
+
+  rabbitmq:
+    image: rabbitmq:4.3.2-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: root
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_VHOST: /
+    configs:
+      - source: rabbitmq_config
+        target: /etc/rabbitmq/rabbitmq.conf
+        mode: 0444
+      - source: rabbitmq_plugins
+        target: /etc/rabbitmq/enabled_plugins
+        mode: 0444
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/mnesia
+    ports:
+      - "127.0.0.1:15672:15672"
+    networks:
+      - messaging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 100s
+    labels:
+      - "app=rabbitmq"
+      - "env=production"
+      - "version=4.2.2"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.16
+    environment:
+      PGADMIN_DEFAULT_EMAIL: simpleurlshortener@domain.com
+      PGADMIN_DEFAULT_PASSWORD: simpleurlshortener
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:24999:80"
+    networks:
+      - database
+    restart: always
+
+  # distroless image (no curl or anything) so idk how to healthcheck it
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.155.0
+    command: [ "--config=/etc/otelcol-contrib/config.yaml" ]
+    configs:
+      - source: otel-collector_config
+        target: /etc/otelcol-contrib/config.yaml
+        mode: 0444
+    networks:
+      - backend
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 700mb
+        reservations:
+          memory: 200mb
+
+  prometheus:
+    image: prom/prometheus:v3.12.0-distroless
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
+      - '--enable-feature=exemplar-storage'
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+        mode: 0444
+    volumes:
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1g
+
+  loki:
+    image: grafana/loki:3.7.3
+    command: "-config.file=/etc/loki/loki-config.yaml"
+    configs:
+      - source: loki_config
+        target: /etc/loki/loki-config.yaml
+        mode: 0444
+    volumes:
+      - loki_data:/loki
+    networks:
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1g
+
+  tempo:
+    image: grafana/tempo:2.10.7
+    command: "-config.file=/etc/tempo/tempo.yaml"
+    user: "0"
+    configs:
+      - source: tempo_config
+        target: /etc/tempo/tempo.yaml
+        mode: 0444
+    volumes:
+      - tempo_data:/tmp/tempo
+    networks:
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1g
+
+  grafana:
+    image: grafana/grafana:11.6.16
+    ports:
+      - "127.0.0.1:25300:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=root
+      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./configs/observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./configs/observability/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 500mb
+        reservations:
+          memory: 100mb
+
+configs:
+  rabbitmq_config:
+    file: ./configs/rabbitmq/rabbitmq.conf
+  rabbitmq_plugins:
+    file: ./configs/rabbitmq/enabled_plugins
+  otel-collector_config:
+    file: ./configs/observability/otel-collector/config.yaml
+  prometheus_config:
+    file: ./configs/observability/prometheus/config.yaml
+  loki_config:
+    file: ./configs/observability/loki/config.yaml
+  tempo_config:
+    file: ./configs/observability/tempo/config.yaml
+
+volumes:
+  postgresql_data:
+    name: "postgresql"
+  rabbitmq_data:
+    name: "rabbitmq"
+  pgadmin_data:
+    name: "pgadmin"
+  prometheus_data:
+    name: "prometheus"
+  loki_data:
+    name: "loki"
+  tempo_data:
+    name: "tempo"
+  grafana_data:
+    name: "grafana"
+
+networks:
+  backend:
+    driver: bridge
+  database:
+    driver: bridge
+  messaging:
+    driver: bridge
+  monitoring:
+    driver: bridge
