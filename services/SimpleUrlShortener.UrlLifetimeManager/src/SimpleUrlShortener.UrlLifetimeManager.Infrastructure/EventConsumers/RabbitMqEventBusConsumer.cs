@@ -15,8 +15,20 @@ public class RabbitMqEventBusConsumer(
     IEventMessageHandlerProvider handlerProvider,
     ILogger<RabbitMqEventBusConsumer> logger) : BackgroundService
 {
-    private const string QueueUrlCreated = "url-lifetime-manager.url.created";
-    private const string QueueUrlRedirected = "url-lifetime-manager.url.redirected";
+    private const string ExchangeName = "urls";
+    private const string DlxName = "urls.url-lifetime-manager.dlx";
+    private const string RetryQueueName = "urls.url-lifetime-manager.retry";
+
+    private const string QueueUrlCreated = "urls.url-lifetime-manager.url.created";
+    private const string QueueUrlRedirected = "urls.url-lifetime-manager.url.redirected";
+
+    private const string DlqUrlCreated = "urls.url-lifetime-manager.url.created.dlq";
+    private const string DlqUrlRedirected = "urls.url-lifetime-manager.url.redirected.dlq";
+
+    private const string RoutingKeyCreated = "url.created";
+    private const string RoutingKeyRedirected = "url.redirected";
+
+    private const string RetryCountHeader = "x-retry-count";
 
     private static readonly Lazy<JsonSerializerOptions> JsonSerializerOptions = new(
         new JsonSerializerOptions
@@ -66,36 +78,78 @@ public class RabbitMqEventBusConsumer(
 
     private async Task DeclareAndBindQueuesAsync()
     {
-        const string ExchangeName = "urls";
         await _channel!.ExchangeDeclareAsync(
             exchange: ExchangeName,
             type: ExchangeType.Direct,
             durable: true,
             autoDelete: false);
 
+        await _channel.ExchangeDeclareAsync(
+            exchange: DlxName,
+            type: ExchangeType.Direct,
+            durable: true,
+            autoDelete: false);
+
+        var retryArgs = new Dictionary<string, object?>
+        {
+            { "x-message-ttl", settings.RetryQueueTtlMs },
+            { "x-dead-letter-exchange", ExchangeName }
+        };
+
         await _channel.QueueDeclareAsync(
-            queue: QueueUrlCreated,
+            queue: RetryQueueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: retryArgs);
+
+        await DeclareMainQueueAsync(QueueUrlCreated, RoutingKeyCreated);
+        await DeclareMainQueueAsync(QueueUrlRedirected, RoutingKeyRedirected);
+
+        await _channel.QueueDeclareAsync(
+            queue: DlqUrlCreated,
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        await _channel.QueueDeclareAsync(
+            queue: DlqUrlRedirected,
             durable: true,
             exclusive: false,
             autoDelete: false);
 
         await _channel.QueueBindAsync(
-            queue: QueueUrlCreated,
-            exchange: ExchangeName,
-            routingKey: "url.created");
-
-        await _channel.QueueDeclareAsync(
-            queue: QueueUrlRedirected,
-            durable: true,
-            exclusive: false,
-            autoDelete: false);
+            queue: DlqUrlCreated,
+            exchange: DlxName,
+            routingKey: RoutingKeyCreated);
 
         await _channel.QueueBindAsync(
-            queue: QueueUrlRedirected,
-            exchange: ExchangeName,
-            routingKey: "url.redirected");
+            queue: DlqUrlRedirected,
+            exchange: DlxName,
+            routingKey: RoutingKeyRedirected);
 
-        logger.LogInformation("Queues declared and bound successfully");
+        logger.LogInformation("Queues, DLX, retry queue, and DLQs declared and bound successfully");
+    }
+
+    private async Task DeclareMainQueueAsync(string queueName, string routingKey)
+    {
+        var queueArgs = new Dictionary<string, object?>
+        {
+            { "x-dead-letter-exchange", DlxName },
+            { "x-dead-letter-routing-key", routingKey }
+        };
+
+        await _channel!.QueueDeclareAsync(
+            queue: queueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: queueArgs);
+
+        await _channel.QueueBindAsync(
+            queue: queueName,
+            exchange: ExchangeName,
+            routingKey: routingKey);
     }
 
     private async Task StartConsumingAsync(CancellationToken cancellationToken)
@@ -153,7 +207,8 @@ public class RabbitMqEventBusConsumer(
             if (integrationEventMessage is null)
             {
                 logger.LogWarning("Failed to deserialize message: {MessageId}", messageId);
-                await NackAndRequeueAsync(args.DeliveryTag);
+                await PublishToDlqAsync(args, cancellationToken);
+                await _channel!.BasicAckAsync(args.DeliveryTag, false, cancellationToken);
                 return;
             }
 
@@ -177,7 +232,18 @@ public class RabbitMqEventBusConsumer(
 
             if (!settings.AutoAck)
             {
-                await NackAndRequeueAsync(args.DeliveryTag);
+                var retryCount = GetRetryCount(args.BasicProperties);
+
+                if (retryCount > 0)
+                {
+                    await PublishToRetryQueueAsync(args, retryCount - 1, cancellationToken);
+                }
+                else
+                {
+                    await PublishToDlqAsync(args, cancellationToken);
+                }
+
+                await _channel!.BasicAckAsync(args.DeliveryTag, false, cancellationToken);
             }
         }
     }
@@ -197,20 +263,62 @@ public class RabbitMqEventBusConsumer(
         }
     }
 
-    private async Task NackAndRequeueAsync(ulong deliveryTag)
+    private int GetRetryCount(IReadOnlyBasicProperties properties)
     {
-        try
+        if (properties.Headers is not null &&
+            properties.Headers.TryGetValue(RetryCountHeader, out var value))
         {
-            await _channel!.BasicNackAsync(deliveryTag, false, true);
-
-            await Task.Delay(settings.RequeueDelayMs, _shutdownToken.Token);
-
-            logger.LogDebug("Message NACKed and requeued: {DeliveryTag}", deliveryTag);
+            return value switch
+            {
+                long longValue => (int)longValue,
+                int intValue => intValue,
+                _ => settings.MaxRetries
+            };
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to NACK message: {DeliveryTag}", deliveryTag);
-        }
+
+        return settings.MaxRetries;
+    }
+
+    private async Task PublishToRetryQueueAsync(BasicDeliverEventArgs args, int retryCount,
+        CancellationToken cancellationToken)
+    {
+        var properties = new BasicProperties(args.BasicProperties);
+        var headers = properties.Headers != null 
+            ? new Dictionary<string, object?>(properties.Headers) 
+            : new Dictionary<string, object?>();
+    
+        headers[RetryCountHeader] = retryCount;
+        properties.Headers = headers;
+
+        await _channel!.BasicPublishAsync(
+            exchange: "",
+            routingKey: RetryQueueName,
+            mandatory: false,
+            basicProperties: properties,
+            body: args.Body,
+            cancellationToken);
+
+        logger.LogWarning(
+            "Message NACKed and published to retry queue with {RetryCount} retries remaining: {MessageId}",
+            retryCount,
+            args.BasicProperties.MessageId);
+    }
+
+    private async Task PublishToDlqAsync(BasicDeliverEventArgs args, CancellationToken cancellationToken)
+    {
+        var properties = new BasicProperties(args.BasicProperties);
+
+        await _channel!.BasicPublishAsync(
+            exchange: DlxName,
+            routingKey: args.RoutingKey,
+            mandatory: false,
+            basicProperties: properties,
+            body: args.Body,
+            cancellationToken);
+
+        logger.LogWarning("Message sent to DLQ with routing key: {RoutingKey} (MessageId: {MessageId})",
+            args.RoutingKey,
+            args.BasicProperties.MessageId);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
