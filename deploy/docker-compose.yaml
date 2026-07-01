@@ -58,7 +58,7 @@ services:
       postgresql:
         condition: service_healthy
 
-  url-shortener:
+  url-shortener-a:
     build:
       context: ../services/SimpleUrlShortener.UrlShortener
       dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
@@ -73,8 +73,46 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+      UrlShortenerSettings__InstancePrefix: "a"
     ports:
       - "25000:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      db-migrator_url-shortener:
+        condition: service_completed_successfully
+
+  url-shortener-b:
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+      UrlShortenerSettings__InstancePrefix: "b"
+    ports:
+      - "25001:8080"
     networks:
       - backend
       - database
@@ -110,7 +148,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
     ports:
-      - "25001:8080"
+      - "25002:8080"
     networks:
       - backend
       - database
@@ -145,9 +183,9 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
-      Clients__UrlShortener__Url: "http://url-shortener"
+      Clients__UrlShortener__Url: "http://nginx"
     ports:
-      - "25002:8080"
+      - "25003:8080"
     networks:
       - backend
       - database
@@ -164,10 +202,45 @@ services:
         condition: service_healthy
       postgresql:
         condition: service_healthy
-      url-shortener:
+      nginx:
+        condition: service_started
+      url-shortener-a:
+        condition: service_started
+      url-shortener-b:
         condition: service_started
       db-migrator_url-lifetime-manager:
         condition: service_completed_successfully
+
+  nginx:
+    build:
+      context: ./configs/nginx
+      dockerfile: Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+    ports:
+      - "80:80"
+    networks:
+      - backend
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 128mb
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      url-shortener-a:
+        condition: service_started
+      url-shortener-b:
+        condition: service_started
 
   postgresql:
     image: postgres:18-alpine3.23

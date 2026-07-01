@@ -1,0 +1,166 @@
+load_module modules/ngx_otel_module.so;
+
+worker_processes auto;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent"';
+
+    access_log /var/log/nginx/access.log main;
+    error_log  /var/log/nginx/error.log warn;
+
+    sendfile on;
+    keepalive_timeout 65;
+
+    otel_exporter {
+        endpoint "${OTEL_EXPORTER_OTLP_ENDPOINT}";
+        ${NGINX_OTEL_HEADER}
+    }
+
+    otel_service_name "nginx";
+    otel_trace on;
+    otel_trace_context propagate;
+
+    map $arg_u $is_create {
+        ""      0;
+        default 1;
+    }
+
+    map $remote_addr $is_localhost {
+        127.0.0.1 1;
+        ::1       1;
+        default   0;
+    }
+
+    upstream url-shortener-backend {
+        server url-shortener-a:8080;
+        server url-shortener-b:8080;
+    }
+
+    server {
+        listen 80;
+
+        otel_span_attr "request.id" $request_id;
+        otel_span_attr "http.method" $request_method;
+
+        # (1) /?u={url} → round-robin to url-shortener-a or url-shortener-b
+        location = / {
+            otel_span_attr "route" "root-or-create";
+            error_page 418 = @proxy_create;
+
+            if ($is_create) {
+                return 418;
+            }
+
+            # (5) localhost catch-all → 200
+            if ($is_localhost) {
+                return 200;
+            }
+
+            # (6) non-localhost catch-all → 404
+            return 404;
+        }
+
+        location @proxy_create {
+            otel_span_attr "route" "url-shortener-create";
+
+            proxy_method POST;
+            rewrite ^/$ /api/ break;
+            proxy_pass http://url-shortener-backend;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # (3) /{code}/lifetime → url-lifetime-manager
+        location ~ ^/(?<code>[^/]+)/lifetime$ {
+            otel_span_attr "route" "lifetime";
+
+            rewrite ^/([^/]+)/lifetime$ /api/$1 break;
+            proxy_pass http://url-lifetime-manager:8080;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # (4) /{code}/analytics → analytics-collector
+        location ~ ^/(?<code>[^/]+)/analytics$ {
+            otel_span_attr "route" "analytics";
+
+            rewrite ^/([^/]+)/analytics$ /api/$1 break;
+            proxy_pass http://analytics-collector:8080;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # (2a) /{code} prefix "a" → url-shortener-a
+        location ~ ^/(?<code>a[^/]*)$ {
+            otel_span_attr "route" "url-shortener-a";
+
+            rewrite ^/(.*)$ /api/$1 break;
+            proxy_pass http://url-shortener-a:8080;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # (2b) /{code} prefix "b" → url-shortener-b
+        location ~ ^/(?<code>b[^/]*)$ {
+            otel_span_attr "route" "url-shortener-b";
+
+            rewrite ^/(.*)$ /api/$1 break;
+            proxy_pass http://url-shortener-b:8080;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # (2c) /{code} unknown prefix → 400
+        location ~ ^/(?<code>[^/]+)$ {
+            otel_span_attr "route" "bad-request";
+            return 400;
+        }
+
+        # (5) localhost catch-all → 200, (6) non-localhost → 404
+        location / {
+            otel_span_attr "route" "fallback";
+            error_page 418 = @localhost_fallback;
+            error_page 419 = @not_found;
+
+            if ($is_localhost) {
+                return 418;
+            }
+
+            return 419;
+        }
+
+        location @localhost_fallback {
+            otel_span_attr "route" "localhost-fallback";
+            return 200;
+        }
+
+        location @not_found {
+            otel_span_attr "route" "not-found";
+            return 404;
+        }
+    }
+}
