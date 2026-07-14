@@ -24,9 +24,7 @@ public class GetOriginalUrlEndpoint : IEndpoint
     {
         try
         {
-            var ipAddress =
-                httpContext.Connection.RemoteIpAddress ??
-                DefaultIpAddress; // TODO: RemoteIpAddress can be the ip address of proxy (i.e. nginx)
+            var ipAddress = httpContext.Connection.RemoteIpAddress ?? DefaultIpAddress;
             var request = new GetOriginalUrlRequest(
                 new UrlCode(urlCode[1..]),
                 new GetOriginalUrlRequest.RequestMetadata(ipAddress));

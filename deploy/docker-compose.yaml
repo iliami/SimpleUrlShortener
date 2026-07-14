@@ -7,14 +7,14 @@ services:
       dockerfile: src/SimpleUrlShortener.UrlShortener.DbMigrator/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true;"
     networks:
       - database
     restart: no
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '0.25'
           memory: 30mb
     depends_on:
       postgresql:
@@ -26,14 +26,14 @@ services:
       dockerfile: src/SimpleUrlShortener.AnalyticsCollector.DbMigrator/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true;"
     networks:
       - database
     restart: no
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '0.25'
           memory: 30mb
     depends_on:
       postgresql:
@@ -45,26 +45,26 @@ services:
       dockerfile: src/SimpleUrlShortener.UrlLifetimeManager.DbMigrator/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true;"
     networks:
       - database
     restart: no
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '0.25'
           memory: 30mb
     depends_on:
       postgresql:
         condition: service_healthy
 
-  url-shortener:
+  url-shortener-a:
     build:
       context: ../services/SimpleUrlShortener.UrlShortener
       dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      ConnectionStrings__Postgres: "Host=pgbouncer; Port=6432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
       RabbitMqConnectionSettings__Host: rabbitmq
       RabbitMqConnectionSettings__Port: 5672
       RabbitMqConnectionSettings__VirtualHost: "/"
@@ -73,6 +73,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+      UrlShortenerSettings__InstancePrefix: "a"
     ports:
       - "25000:8080"
     networks:
@@ -84,7 +85,44 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '4'
+          memory: 300mb
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      db-migrator_url-shortener:
+        condition: service_completed_successfully
+
+  url-shortener-b:
+    build:
+      context: ../services/SimpleUrlShortener.UrlShortener
+      dockerfile: src/SimpleUrlShortener.UrlShortener.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=pgbouncer; Port=6432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      RabbitMqConnectionSettings__Host: rabbitmq
+      RabbitMqConnectionSettings__Port: 5672
+      RabbitMqConnectionSettings__VirtualHost: "/"
+      RabbitMqConnectionSettings__UserName: root
+      RabbitMqConnectionSettings__Password: password
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+      UrlShortenerSettings__InstancePrefix: "b"
+    ports:
+      - "25001:8080"
+    networks:
+      - backend
+      - database
+      - messaging
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
           memory: 300mb
     depends_on:
       rabbitmq:
@@ -100,7 +138,7 @@ services:
       dockerfile: src/SimpleUrlShortener.AnalyticsCollector.API/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "Host=postgresql; Port=5432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
+      ConnectionStrings__Postgres: "Host=pgbouncer; Port=6432; Database=SimpleUrlShortener; Username=root; Password=password; Pooling=true; Minimum Pool Size=0; Maximum Pool Size=100;"
       RabbitMqConnectionSettings__Host: rabbitmq
       RabbitMqConnectionSettings__Port: 5672
       RabbitMqConnectionSettings__VirtualHost: "/"
@@ -110,7 +148,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
     ports:
-      - "25001:8080"
+      - "25002:8080"
     networks:
       - backend
       - database
@@ -120,7 +158,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '4'
           memory: 300mb
     depends_on:
       rabbitmq:
@@ -145,9 +183,9 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
-      Clients__UrlShortener__Url: "http://url-shortener"
+      Clients__UrlShortener__Url: "http://nginx"
     ports:
-      - "25002:8080"
+      - "25003:8080"
     networks:
       - backend
       - database
@@ -157,17 +195,52 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '4'
           memory: 300mb
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgresql:
         condition: service_healthy
-      url-shortener:
+      nginx:
+        condition: service_started
+      url-shortener-a:
+        condition: service_started
+      url-shortener-b:
         condition: service_started
       db-migrator_url-lifetime-manager:
         condition: service_completed_successfully
+
+  nginx:
+    build:
+      context: ./configs/nginx
+      dockerfile: Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20super-secret-token-for-otel-collector"
+    ports:
+      - "80:80"
+    networks:
+      - backend
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 128mb
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      url-shortener-a:
+        condition: service_started
+      url-shortener-b:
+        condition: service_started
 
   postgresql:
     image: postgres:18-alpine3.23
@@ -176,6 +249,11 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: SimpleUrlShortener
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    configs:
+      - source: postgresql_config
+        target: /etc/postgresql/postgresql.conf
+        mode: 0444
+    command: "postgres -c config_file=/etc/postgresql/postgresql.conf"
     volumes:
       - postgresql_data:/var/lib/postgresql
     networks:
@@ -184,8 +262,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1g
+          cpus: '4'
+          memory: 2g
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U root -d SimpleUrlShortener" ]
       interval: 3s
@@ -201,6 +279,48 @@ services:
       - "app=postgresql"
       - "env=production"
       - "version=18.1"
+  
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.2-p0
+    configs:
+      - source: pgbouncer_config
+        target: /etc/pgbouncer/pgbouncer.ini
+        mode: 0444
+      - source: pgbouncer_userlist
+        target: /etc/pgbouncer/userlist.txt
+        mode: 0444
+    networks:
+      - database
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256m
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    labels:
+      - "app=pgbouncer"
+      - "env=production"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.16
+    environment:
+      PGADMIN_DEFAULT_EMAIL: simpleurlshortener@domain.com
+      PGADMIN_DEFAULT_PASSWORD: simpleurlshortener
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:24999:80"
+    networks:
+      - database
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500m
+    restart: always
 
   rabbitmq:
     image: rabbitmq:4.3.2-management-alpine
@@ -225,7 +345,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '4'
           memory: 1G
         reservations:
           memory: 512M
@@ -239,19 +359,6 @@ services:
       - "app=rabbitmq"
       - "env=production"
       - "version=4.2.2"
-
-  pgadmin:
-    image: dpage/pgadmin4:9.16
-    environment:
-      PGADMIN_DEFAULT_EMAIL: simpleurlshortener@domain.com
-      PGADMIN_DEFAULT_PASSWORD: simpleurlshortener
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    ports:
-      - "127.0.0.1:24999:80"
-    networks:
-      - database
-    restart: always
 
   # distroless image (no curl or anything) so idk how to healthcheck it
   otel-collector:
@@ -268,7 +375,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '4'
           memory: 700mb
         reservations:
           memory: 200mb
@@ -292,7 +399,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '1'
           memory: 1g
 
   loki:
@@ -310,7 +417,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '1'
           memory: 1g
 
   tempo:
@@ -329,7 +436,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '1'
           memory: 1g
 
   grafana:
@@ -355,12 +462,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
+          cpus: '1'
           memory: 500mb
         reservations:
           memory: 100mb
 
 configs:
+  postgresql_config:
+    file: ./configs/postgresql/postgres.conf
+  pgbouncer_config:
+    file: ./configs/postgresql/pgbouncer.ini
+  pgbouncer_userlist:
+    file: ./configs/postgresql/userlist.txt
   rabbitmq_config:
     file: ./configs/rabbitmq/rabbitmq.conf
   rabbitmq_plugins:
