@@ -4,5 +4,5 @@ namespace SimpleUrlShortener.AnalyticsCollector.Domain.Application;
 
 public interface IGeoIpService
 {
-    Task<Coordinates> GetCoordinates(Ip ip, CancellationToken cancellationToken);
+    Task<Dictionary<Ip, Coordinates>> GetCoordinates(IEnumerable<Ip> ips, CancellationToken cancellationToken);
 }

@@ -41,5 +41,6 @@ public class AppDbContext(
         modelBuilder.Entity<UrlMappingRedirectionEntity>().ToTable("UrlMappingRedirection");
 
         modelBuilder.Entity<UrlMappingRedirectionEntity>().Property(u => u.Ip).HasMaxLength(512);
+        modelBuilder.Entity<UrlMappingRedirectionEntity>().Property(e => e.IpKind).HasMaxLength(64);
     }
 }
