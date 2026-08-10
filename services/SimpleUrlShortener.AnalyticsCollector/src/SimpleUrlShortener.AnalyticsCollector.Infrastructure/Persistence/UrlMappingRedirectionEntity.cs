@@ -10,6 +10,9 @@ public class UrlMappingRedirectionEntity
     public string IpKind { get; init; } = string.Empty;
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
+    
+    public string? UrlMappingId { get; init; }
+    public Guid? UrlMappingDeletionId { get; init; }
 }
 
 public static class UrlMappingRedirectionsEntityMapExtensions

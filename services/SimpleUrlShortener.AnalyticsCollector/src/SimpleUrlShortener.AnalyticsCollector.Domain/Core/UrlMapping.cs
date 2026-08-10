@@ -4,10 +4,9 @@ using System.ComponentModel.DataAnnotations;
 namespace SimpleUrlShortener.AnalyticsCollector.Domain.Core;
 
 public record UrlMapping(
-    UrlCode Code, 
-    OriginalUrl Original, 
+    UrlCode Code,
+    OriginalUrl Original,
     DateTimeOffset CreatedAt,
-    bool IsRevoked,
     IImmutableList<UrlMappingRedirection> Redirections);
 
 public readonly record struct UrlCode
@@ -17,22 +16,20 @@ public readonly record struct UrlCode
 
     private char InstancePrefix { get; }
     private string Code { get; }
-    
+
     public string Value { get; private init; }
 
     public UrlCode(
         char instancePrefix,
-        [StringLength(UrlCode.MaxCodeLength)]
-        string code)
+        [StringLength(UrlCode.MaxCodeLength)] string code)
     {
         InstancePrefix = instancePrefix;
         Code = code;
         Value = InstancePrefix + Code;
     }
-    
+
     public UrlCode(
-        [StringLength(UrlCode.MaxLength)]
-        string value)
+        [StringLength(UrlCode.MaxLength)] string value)
     {
         InstancePrefix = '\0';
         Code = string.Empty;
