@@ -1,8 +1,7 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using SimpleUrlShortener.AnalyticsCollector.API.Endpoints;
+using SimpleUrlShortener.UrlShortener.API.Endpoints;
 
-namespace SimpleUrlShortener.AnalyticsCollector.API;
+namespace SimpleUrlShortener.UrlShortener.API.Extensions;
 
 public static class EndpointExtensions
 {
@@ -22,6 +21,20 @@ public static class EndpointExtensions
         builder.Services.TryAddEnumerable(endpointServiceDescriptors);
 
         return builder;
+    }
+
+    public static IApplicationBuilder MapEndpoints(
+        this WebApplication app,
+        string? routeGroupPrefix = null)
+    {
+        if (routeGroupPrefix is not null)
+        {
+            var apiPrefix = app.MapGroup(routeGroupPrefix);
+
+            app.MapEndpoints(apiPrefix);
+        }
+
+        return app;
     }
 
     public static IApplicationBuilder MapEndpoints(
