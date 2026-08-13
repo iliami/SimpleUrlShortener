@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence;
 namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260805123430_LazyEvaluationOfRedirectionCoordinates")]
+    partial class LazyEvaluationOfRedirectionCoordinates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,33 +26,6 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingDeletionEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Original")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UrlMappingDeletion", "analytics-collector");
-                });
-
             modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>
                 {
                     b.Property<string>("Code")
@@ -58,6 +34,9 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Original")
                         .IsRequired()
@@ -94,38 +73,22 @@ namespace SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.Migra
                     b.Property<DateTimeOffset>("OccuredOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UrlMappingDeletionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("UrlMappingId")
-                        .HasMaxLength(32)
+                    b.Property<string>("UrlMappingEntityCode")
                         .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UrlMappingDeletionId");
-
-                    b.HasIndex("UrlMappingId");
+                    b.HasIndex("UrlMappingEntityCode");
 
                     b.ToTable("UrlMappingRedirection", "analytics-collector");
                 });
 
             modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingRedirectionEntity", b =>
                 {
-                    b.HasOne("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingDeletionEntity", null)
-                        .WithMany("UrlMappingRedirections")
-                        .HasForeignKey("UrlMappingDeletionId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", null)
                         .WithMany("UrlMappingRedirections")
-                        .HasForeignKey("UrlMappingId")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingDeletionEntity", b =>
-                {
-                    b.Navigation("UrlMappingRedirections");
+                        .HasForeignKey("UrlMappingEntityCode")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("SimpleUrlShortener.AnalyticsCollector.Infrastructure.Persistence.UrlMappingEntity", b =>

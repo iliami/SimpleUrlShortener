@@ -14,8 +14,8 @@ public class DeleteUrlMappingUseCase(
         var urlMapping = await storage.TryGet(request.Code, cancellationToken)
                          ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
-        urlMapping = urlMapping with { IsRevoked = true };
-        await storage.Save(urlMapping, cancellationToken);
+        var urlMappingDeletion = urlMapping.Map(DateTimeOffset.UtcNow);
+        await storage.Save(urlMappingDeletion, cancellationToken);
 
         return Unit.Value;
     }
@@ -24,5 +24,5 @@ public class DeleteUrlMappingUseCase(
 public interface IDeleteUrlMappingStorage : IStorage
 {
     Task<UrlMapping?> TryGet(UrlCode code, CancellationToken ct);
-    Task<bool> Save(UrlMapping urlMapping, CancellationToken cancellationToken = default);
+    Task<bool> Save(UrlMappingDeletion urlMappingDeletion, CancellationToken cancellationToken = default);
 }

@@ -12,8 +12,7 @@ public record AddUrlMappingRedirectionUseCaseRequest(
 public record AddUrlMappingRedirectionUseCaseResponse(bool Success);
 
 public class AddUrlMappingRedirectionUseCase(
-    IAddUrlMappingRedirectionStorage storage,
-    IGeoIpService geoIpService)
+    IAddUrlMappingRedirectionStorage storage)
     : IRequestHandler<AddUrlMappingRedirectionUseCaseRequest, AddUrlMappingRedirectionUseCaseResponse>
 {
     public async ValueTask<AddUrlMappingRedirectionUseCaseResponse> Handle(
@@ -23,12 +22,10 @@ public class AddUrlMappingRedirectionUseCase(
         var storedUrlMapping = await storage.TryGet(request.Code, cancellationToken)
                                ?? throw new NotFoundException<UrlMapping>($"UrlCode: {request.Code.Value}");
 
-        var coordinates = await geoIpService.GetCoordinates(request.Ip, cancellationToken);
-
         var redirection = new UrlMappingRedirection(
+            Guid.Empty,
             request.RedirectedAt.ToUniversalTime(),
-            request.Ip,
-            coordinates);
+            request.Ip);
 
         var urlMapping = storedUrlMapping with
         {

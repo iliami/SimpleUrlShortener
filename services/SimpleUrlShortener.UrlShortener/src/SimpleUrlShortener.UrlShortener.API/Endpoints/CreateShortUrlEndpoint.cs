@@ -5,7 +5,7 @@ using SimpleUrlShortener.UrlShortener.Domain.Core;
 
 namespace SimpleUrlShortener.UrlShortener.API.Endpoints;
 
-public record CreateShortUrlEndpointResponse(string OriginalUrl, string ShortCode);
+public record CreateShortUrlEndpointResponse(string OriginalUrl, string ShortUrl);
 
 public class CreateShortUrlEndpoint : IEndpoint
 {
@@ -32,10 +32,11 @@ public class CreateShortUrlEndpoint : IEndpoint
             var response = await mediator.Send(request, cancellationToken);
 
             var code = $"{response.CodePrefix}{response.Code.Value}";
+            var shortUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/{code}";
 
             return TypedResults.Ok(new CreateShortUrlEndpointResponse(
                 request.Original.Value,
-                code
+                shortUrl
             ));
         }
         catch (Exception ex)

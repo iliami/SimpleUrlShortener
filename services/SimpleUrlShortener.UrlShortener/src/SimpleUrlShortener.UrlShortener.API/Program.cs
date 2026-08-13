@@ -1,103 +1,15 @@
-using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Serilog;
-using SimpleUrlShortener.UrlShortener.API;
-using SimpleUrlShortener.UrlShortener.Domain.Application;
-using SimpleUrlShortener.UrlShortener.Infrastructure;
-using SimpleUrlShortener.UrlShortener.Infrastructure.Persistence;
+using SimpleUrlShortener.UrlShortener.API.Extensions;
 
-var builder = WebApplication.CreateBuilder(args);
+var app = WebApplication.CreateBuilder(args)
+    .AddUrlShortener()
+    .AddMonitoring()
+    .AddSwaggerService()
+    .Build();
 
-builder.Host.UseSerilog(
-    (context, loggerConfiguration) => { loggerConfiguration.ReadFrom.Configuration(context.Configuration); },
-    false,
-    true);
-
-builder.Host.UseDefaultServiceProvider((_, options) =>
-{
-    options.ValidateScopes = true;
-    options.ValidateOnBuild = true;
-});
-
-var serviceName = builder.Configuration["ThisService:Name"] ?? "UrlShortener";
-var serviceVersion = builder.Configuration["ThisService:Version"] ?? "unknown";
-
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource
-        .AddService(serviceName: serviceName, serviceVersion: serviceVersion)
-        .AddAttributes(new Dictionary<string, object>
-        {
-            ["deployment.environment"] = builder.Environment.EnvironmentName
-        }))
-    .UseOtlpExporter()
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddEntityFrameworkCoreInstrumentation()
-        .AddRabbitMQInstrumentation()
-        .AddSource($"SimpleUrlShortener.{serviceName}.*")
-    )
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation()
-        .AddProcessInstrumentation()
-    )
-    .WithLogging();
-
-builder.Services
-    .AddHttpLogging(options =>
-    {
-        options.LoggingFields = HttpLoggingFields.Duration | HttpLoggingFields.RequestPath |
-                                HttpLoggingFields.RequestBody | HttpLoggingFields.RequestHeaders |
-                                HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
-    })
-    .AddSwaggerGen();
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto |
-                               ForwardedHeaders.XForwardedHost;
-
-    /*
-     TODO [SECURITY] [CRITICAL]:
-       Очистка KnownIPNetworks и KnownProxies создает уязвимость к подделке заголовков
-       X-Forwarded-* (IP/Host Spoofing), так как приложение начинает доверять им от любых источников.
-       После утверждения инфраструктуры необходимо заменить этот код на явное указание
-       доверенных IP-адресов или сетей прокси.
-    */
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
-
-var di = (builder.Services, builder.Configuration);
-
-di.AddApplication().AddInfrastructure().AddEndpoints();
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    using var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
-
-var apiPrefix = app.MapGroup("api/");
-
-app.MapEndpoints(apiPrefix);
-
-app.UseForwardedHeaders();
-
-app.UseSwagger();
-app.UseSwaggerUI();
-
-app.UseHttpsRedirection();
+app
+    .MigrateIfDevelopment()
+    .MapEndpoints("api/")
+    .UseForwardedHeaders()
+    .UseSwaggerService();
 
 app.Run();

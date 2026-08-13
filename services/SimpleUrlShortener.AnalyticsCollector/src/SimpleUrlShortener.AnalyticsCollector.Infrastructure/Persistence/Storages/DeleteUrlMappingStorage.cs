@@ -13,20 +13,38 @@ public class DeleteUrlMappingStorage(
             .FirstOrDefaultAsync(x => x.Code == code.Value, ct)
             .Map();
 
-    public async Task<bool> Save(UrlMapping urlMapping, CancellationToken cancellationToken = default)
+    public async Task<bool> Save(UrlMappingDeletion urlMappingDeletion, CancellationToken cancellationToken = default)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var entity = urlMapping.Map();
-            dbContext.UrlMappings.Update(entity);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            dbContext.Entry(entity).State = EntityState.Detached;
+            var entity = urlMappingDeletion.Map();
 
-            return true;
+            dbContext.UrlMappingDeletions.Attach(entity);
+            var addedUrlMappingDeletion = await dbContext.SaveChangesAsync(cancellationToken);
+
+            await dbContext.UrlMappingRedirections
+                .Where(x => x.UrlMappingId == urlMappingDeletion.Code.Value)
+                .ExecuteUpdateAsync(
+                    x => x.SetProperty(
+                        d => d.UrlMappingDeletionId,
+                        entity.Id),
+                    cancellationToken);
+
+            var deletedUrlMapping = await dbContext.UrlMappings
+                .Where(x => x.Code == urlMappingDeletion.Code.Value)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return addedUrlMappingDeletion == 1 && deletedUrlMapping == 1;
         }
         catch
         {
             return false;
+        }
+        finally
+        {
+            await transaction.RollbackAsync(cancellationToken);
         }
     }
 }
